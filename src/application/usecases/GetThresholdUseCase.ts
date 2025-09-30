@@ -13,12 +13,4 @@ export class GetThresholdUseCase {
     }
     return threshold;
   }
-
-  public async executeByBusinessKey(businessKey: string): Promise<Threshold> {
-    const threshold = await this.repository.findByBusinessKey(businessKey);
-    if (!threshold) {
-      throw new ThresholdNotFoundError(`BusinessKey: ${businessKey}`);
-    }
-    return threshold;
-  }
 }

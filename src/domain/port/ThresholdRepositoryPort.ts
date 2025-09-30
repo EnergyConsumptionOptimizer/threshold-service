@@ -7,8 +7,6 @@ import { ThresholdType } from "../value/ThresholdType";
 export interface ThresholdRepositoryPort {
   findById(id: ThresholdId): Promise<Threshold | undefined>;
 
-  findByBusinessKey(businessKey: string): Promise<Threshold | undefined>;
-
   findAll(): Promise<Threshold[]>;
 
   findByFilters(
