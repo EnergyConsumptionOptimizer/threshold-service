@@ -14,14 +14,15 @@ export class CreateThresholdUseCase {
     thresholdType: ThresholdType,
     value: number,
   ): Promise<Threshold> {
-    const businessKey = Threshold.createBusinessKey(
+    const existing = await this.repository.findByFilters(
       resourceType,
       periodType,
       thresholdType,
     );
-    const existing = await this.repository.findByBusinessKey(businessKey);
-    if (existing) {
-      throw new ThresholdAlreadyExistsError(businessKey);
+    if (existing.length > 0) {
+      throw new ThresholdAlreadyExistsError(
+        Threshold.createBusinessKey(resourceType, periodType, thresholdType),
+      );
     }
 
     const threshold = Threshold.create({
