@@ -18,9 +18,10 @@
     "paths": {
       "@domain/*": ["./src/domain/*"],
       "@application/*": ["./src/application/*"],
-      "@presentation/*": ["./src/presentation/*"],
-      "@storage/*": ["./src/storage/*"],
-      "@interfaces/*": ["./src/interfaces/*"],
+      //"@presentation/*": ["./src/presentation/*"],
+      //"@storage/*": ["./src/storage/*"],
+      //"@interfaces/*": ["./src/interfaces/*"],
+      //"@config/*": ["./src/config/*"]
     }
   },
   "include": ["src/**/*"],
