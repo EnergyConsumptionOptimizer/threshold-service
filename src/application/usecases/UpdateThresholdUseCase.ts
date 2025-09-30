@@ -16,18 +16,4 @@ export class UpdateThresholdUseCase {
     await this.repository.save(updated);
     return updated;
   }
-
-  public async executeByBusinessKey(
-    businessKey: string,
-    value: number,
-  ): Promise<Threshold> {
-    const threshold = await this.repository.findByBusinessKey(businessKey);
-    if (!threshold) {
-      throw new ThresholdNotFoundError(`BusinessKey: ${businessKey}`);
-    }
-
-    const updated = threshold.updateValue(value);
-    await this.repository.save(updated);
-    return updated;
-  }
 }
