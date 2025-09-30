@@ -31,7 +31,8 @@
     "typescript-eslint": "^8.42.0",
     "uuid": "^13.0.0",
     "vitest": "^3.2.4",
-    "yamljs": "^0.3.0"
+    "yamljs": "^0.3.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
@@ -55,7 +56,8 @@
     "supertest": "^7.1.4",
     "ts-node-dev": "^2.0.0",
     "typedoc-github-theme": "^0.3.1",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vite-tsconfig-paths": "^5.1.4"
   },
   "release": {
     "branches": [
