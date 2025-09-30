@@ -1,0 +1,212 @@
+name: CI-CD
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+    types: [ opened, synchronize, reopened ]
+
+env:
+  NODE_DEFAULT_VERSION: "22.19.0"
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    outputs:
+      node-version: ${{ steps.node_version.outputs.version }}
+      repository-lowercase: ${{ steps.repo_name.outputs.lowercase }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Extract Node.js version
+        id: node_version
+        run: |
+          NODE_VER=$(grep -Po 'version\.set\("\K[0-9]+\.[0-9]+\.[0-9]+' build.gradle.kts || echo "$NODE_DEFAULT_VERSION")
+          echo "version=$NODE_VER" >> $GITHUB_OUTPUT
+
+      - name: Convert repository name to lowercase
+        id: repo_name
+        run: echo "lowercase=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+  gradle-build:
+    runs-on: ubuntu-latest
+    needs: setup
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '22'
+          distribution: temurin
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - run: ./gradlew assemble --info
+
+  quality-checks:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+    needs: [ gradle-build ]
+    strategy:
+      matrix:
+        task: [ lint, test ]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ needs.setup.outputs.node-version }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Lint
+        if: matrix.task == 'lint'
+        continue-on-error: true
+        run: npm run lint 2>&1 | tee lint-report.txt
+
+      - name: Run Tests
+        if: matrix.task == 'test'
+        run: npm run test 2>&1 | tee test-report.txt
+
+      - name: Upload Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.task }}-report
+          path: ${{ matrix.task }}-report.txt
+          retention-days: 30
+
+  release:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [ setup, quality-checks ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ needs.setup.outputs.node-version }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Run Semantic Release
+        run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  upload-docs:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [ release ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ needs.setup.outputs.node-version }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm clean-install
+
+      - run: npx typedoc --entryPointStrategy expand ./src --plugin typedoc-github-theme
+
+      - name: Deploy to GitHub Pages
+        uses: crazy-max/ghaction-github-pages@v4
+        with:
+          target_branch: gh-pages
+          build_dir: docs/
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    name: Build & Push Docker
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [ setup, upload-docs ]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ needs.setup.outputs.repository-lowercase }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build & Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      - name: Verify Docker Image
+        run: docker pull ghcr.io/${{ needs.setup.outputs.repository-lowercase }}:latest
