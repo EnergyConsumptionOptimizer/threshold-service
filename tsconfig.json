@@ -13,7 +13,16 @@
     "resolveJsonModule": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "removeComments": false
+    "removeComments": false,
+    "baseUrl": ".",
+    "paths": {
+      "@domain/*": ["./src/domain/*"],
+      "@application/*": ["./src/application/*"],
+      //"@presentation/*": ["./src/presentation/*"],
+      //"@storage/*": ["./src/storage/*"],
+      //"@interfaces/*": ["./src/interfaces/*"],
+      //"@config/*": ["./src/config/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src/**/*"],
 }
