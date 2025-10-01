@@ -19,9 +19,8 @@
       "@domain/*": ["./src/domain/*"],
       "@application/*": ["./src/application/*"],
       //"@presentation/*": ["./src/presentation/*"],
-      //"@storage/*": ["./src/storage/*"],
+      "@storage/*": ["./src/storage/*"],
       //"@interfaces/*": ["./src/interfaces/*"],
-      //"@config/*": ["./src/config/*"]
     }
   },
   "include": ["src/**/*"],
