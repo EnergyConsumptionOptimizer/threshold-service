@@ -11,7 +11,6 @@ import type { ThresholdDocument } from "@storage/models/ThresholdModel";
 
 vi.mock("../../../../storage/models/ThresholdModel");
 
-// Helper per creare la chain .lean().exec()
 const mockChain = <T>(value: T) =>
   ({
     lean: vi.fn().mockReturnThis(),
