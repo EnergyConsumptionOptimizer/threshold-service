@@ -50,7 +50,7 @@ jobs:
           java-version: '22'
           distribution: temurin
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       - name: Cache Gradle
         uses: actions/cache@v4
