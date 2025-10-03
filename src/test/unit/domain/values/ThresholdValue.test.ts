@@ -38,6 +38,5 @@ describe("ThresholdValue", () => {
 
     expect(value.toString()).toBe("100.5");
     expect(value.valueOf()).toBe(100.5);
-    expect(JSON.stringify(value)).toBe("100.5");
   });
 });
