@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { validate } from "uuid";
 import { ThresholdId } from "@domain/value/ThresholdId";
-import { DomainError } from "@domain/errors";
+import { InvalidThresholdIdError } from "@domain/errors";
 
 describe("ThresholdId", () => {
   const validUuid = "123e4567-e89b-12d3-a456-426614174000";
@@ -17,8 +17,8 @@ describe("ThresholdId", () => {
   });
 
   it("should reject invalid values", () => {
-    expect(() => ThresholdId.of("")).toThrow(DomainError);
-    expect(() => ThresholdId.of("invalid")).toThrow(DomainError);
+    expect(() => ThresholdId.of("")).toThrow(InvalidThresholdIdError);
+    expect(() => ThresholdId.of("invalid")).toThrow(InvalidThresholdIdError);
   });
 
   it("should compare equality", () => {
