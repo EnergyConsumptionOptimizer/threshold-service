@@ -4,7 +4,7 @@
     "clean": "rimraf dist",
     "build": "tsc",
     "start": "node dist/app.js",
-    "start:dev": "ts-node-dev --respawn --transpile-only src/app.ts",
+    "start:dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/app.ts",
     "test": "npx vitest run",
     "lint": "npx eslint \"src/**/*.{ts,js}\"",
     "lint:fix": "npx eslint \"src/**/*.{ts,js}\" --fix",
@@ -55,6 +55,7 @@
     "semantic-release-preconfigured-conventional-commits": "^1.1.133",
     "supertest": "^7.1.4",
     "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
     "typedoc-github-theme": "^0.3.1",
     "typescript": "^5.9.2",
     "vite-tsconfig-paths": "^5.1.4"
