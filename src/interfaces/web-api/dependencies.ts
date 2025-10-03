@@ -1,4 +1,3 @@
-// ===== Repository =====
 import { MongoThresholdRepository } from "@storage/repositories/MongoThresholdRepository";
 import { CreateThresholdUseCase } from "@application/usecases/CreateThresholdUseCase";
 import { GetThresholdUseCase } from "@application/usecases/GetThresholdUseCase";
