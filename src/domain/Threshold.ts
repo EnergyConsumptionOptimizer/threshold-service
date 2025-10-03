@@ -85,7 +85,7 @@ export class Threshold {
   }
 
   equals(other: Threshold): boolean {
-    return this._id.equals(other._id);
+    return this._id.equals(other._id) && this.hasSameConfiguration(other);
   }
 
   hasSameConfiguration(other: Threshold): boolean {
