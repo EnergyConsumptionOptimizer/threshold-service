@@ -3,7 +3,7 @@ import { ResourceType } from "@domain/value/ResourceType";
 import { ThresholdType } from "@domain/value/ThresholdType";
 import { ThresholdRepositoryPort } from "@domain/port/ThresholdRepositoryPort";
 import { Threshold } from "@domain/Threshold";
-import { ThresholdAlreadyExistsError } from "@application/errors";
+import { ThresholdAlreadyExistsError } from "@domain/errors";
 
 export class CreateThresholdUseCase {
   constructor(private readonly repository: ThresholdRepositoryPort) {}
