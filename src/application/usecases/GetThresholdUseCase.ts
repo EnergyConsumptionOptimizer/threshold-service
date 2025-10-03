@@ -1,7 +1,7 @@
 import { ThresholdRepositoryPort } from "@domain/port/ThresholdRepositoryPort";
 import { Threshold } from "@domain/Threshold";
 import { ThresholdId } from "@domain/value/ThresholdId";
-import { ThresholdNotFoundError } from "@application/errors";
+import { ThresholdNotFoundError } from "@domain/errors";
 
 export class GetThresholdUseCase {
   constructor(private readonly repository: ThresholdRepositoryPort) {}
@@ -9,7 +9,7 @@ export class GetThresholdUseCase {
   public async executeById(id: ThresholdId): Promise<Threshold> {
     const threshold = await this.repository.findById(id);
     if (!threshold) {
-      throw new ThresholdNotFoundError(`ID: ${id.value}`);
+      throw new ThresholdNotFoundError(id.value);
     }
     return threshold;
   }
