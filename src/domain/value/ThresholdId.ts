@@ -1,5 +1,5 @@
 import { validate, v4 as uuid } from "uuid";
-import { DomainError } from "../errors";
+import { InvalidThresholdIdError } from "../errors";
 
 export class ThresholdId {
   private constructor(private readonly _value: string) {}
@@ -10,11 +10,11 @@ export class ThresholdId {
 
   static of(value: string): ThresholdId {
     if (!value.trim()) {
-      throw new DomainError("ThresholdId cannot be empty");
+      throw new InvalidThresholdIdError(value, "cannot be empty");
     }
 
     if (!validate(value)) {
-      throw new DomainError(`Invalid ThresholdId format: ${value}`);
+      throw new InvalidThresholdIdError(value);
     }
 
     return new ThresholdId(value);

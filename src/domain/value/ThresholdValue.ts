@@ -41,10 +41,6 @@ export class ThresholdValue {
     return this._value.toString();
   }
 
-  toJSON(): number {
-    return this._value;
-  }
-
   valueOf(): number {
     return this._value;
   }
