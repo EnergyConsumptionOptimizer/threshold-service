@@ -1,94 +1,106 @@
-import { ThresholdModel, ThresholdDocument } from "../models/ThresholdModel";
+import { ThresholdDocument, ThresholdModel } from "../models/ThresholdModel";
 import { FilterQuery } from "mongoose";
 import { ThresholdRepositoryPort } from "@domain/port/ThresholdRepositoryPort";
 import { ThresholdId } from "@domain/value/ThresholdId";
 import { Threshold } from "@domain/Threshold";
-import { ResourceType } from "@domain/value/ResourceType";
+import { UtilityType } from "@domain/value/UtilityType";
 import { PeriodType } from "@domain/value/PeriodType";
 import { ThresholdType } from "@domain/value/ThresholdType";
-
-export interface ThresholdPersistence {
-  _id: string;
-  resourceType: string;
-  periodType: string;
-  thresholdType: string;
-  value: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { v4 as uuidv4 } from "uuid";
+import { MongoError } from "mongodb";
+import {
+  ThresholdAlreadyExistsError,
+  ThresholdNotFoundError,
+} from "@domain/errors";
+import {
+  ThresholdDoc,
+  thresholdMapper,
+} from "@presentation/mappers/thresholdDTO";
 
 export class MongoThresholdRepository implements ThresholdRepositoryPort {
-  async findById(id: ThresholdId): Promise<Threshold | undefined> {
-    const doc = await ThresholdModel.findById(id.value).lean().exec();
-    return doc ? this.toDomain(doc as ThresholdDocument) : undefined;
-  }
-
   async findAll(): Promise<Threshold[]> {
     const docs = await ThresholdModel.find()
       .sort({ createdAt: -1 })
       .lean()
       .exec();
-    return docs.map((doc) => this.toDomain(doc as ThresholdDocument));
+    return docs.map((doc) => thresholdMapper.toDomain(doc as ThresholdDoc));
+  }
+
+  async findById(id: ThresholdId): Promise<Threshold | null> {
+    const doc = await ThresholdModel.findById(id.value).lean().exec();
+    return doc ? thresholdMapper.toDomain(doc as ThresholdDoc) : null;
+  }
+
+  async findByStatus(isActive: boolean): Promise<Threshold[]> {
+    return this.findByFilters(undefined, undefined, undefined, isActive);
   }
 
   async findByFilters(
-    resourceType?: ResourceType,
+    utilityType?: UtilityType,
     periodType?: PeriodType,
     thresholdType?: ThresholdType,
+    isActive?: boolean,
   ): Promise<Threshold[]> {
-    const filter = this.buildFilter(resourceType, periodType, thresholdType);
+    const filter: FilterQuery<ThresholdDocument> = {
+      ...(utilityType && { utilityType }),
+      ...(periodType && { periodType }),
+      ...(thresholdType && { thresholdType }),
+      ...(isActive !== undefined && { isActive }),
+    };
+
     const docs = await ThresholdModel.find(filter)
       .sort({ createdAt: -1 })
       .lean()
       .exec();
-    return docs.map((doc) => this.toDomain(doc as ThresholdDocument));
+    return docs.map((doc) => thresholdMapper.toDomain(doc as ThresholdDoc));
   }
 
-  async save(threshold: Threshold): Promise<void> {
-    const doc = this.toPersistence(threshold);
-    await ThresholdModel.findByIdAndUpdate(threshold.id.value, doc, {
-      upsert: true,
-      new: true,
-    }).exec();
+  async save(threshold: Threshold): Promise<Threshold> {
+    try {
+      const doc = await ThresholdModel.create({
+        _id: uuidv4(),
+        ...thresholdMapper.toPersistence(threshold),
+      });
+      return thresholdMapper.toDomain(doc.toObject() as ThresholdDoc);
+    } catch (error) {
+      this.handleMongoError(error, threshold);
+    }
   }
 
-  async delete(threshold: Threshold): Promise<void> {
-    await ThresholdModel.findByIdAndDelete(threshold.id.value).exec();
+  async update(
+    thresholdID: ThresholdId,
+    attrs: Partial<Threshold>,
+  ): Promise<Threshold | null> {
+    const existing = await this.findById(thresholdID);
+    if (!existing) throw new ThresholdNotFoundError(thresholdID.value);
+
+    const updated = existing.update(attrs);
+
+    try {
+      const doc = await ThresholdModel.findByIdAndUpdate(
+        thresholdID.value,
+        thresholdMapper.toPersistence(updated),
+        { new: true },
+      )
+        .lean()
+        .exec();
+
+      return doc ? thresholdMapper.toDomain(doc as ThresholdDoc) : null;
+    } catch (error) {
+      this.handleMongoError(error, updated);
+    }
   }
 
-  private buildFilter(
-    resourceType?: ResourceType,
-    periodType?: PeriodType,
-    thresholdType?: ThresholdType,
-  ): FilterQuery<ThresholdDocument> {
-    const filter: FilterQuery<ThresholdDocument> = {};
-    if (resourceType) filter.resourceType = resourceType;
-    if (periodType) filter.periodType = periodType;
-    if (thresholdType) filter.thresholdType = thresholdType;
-    return filter;
+  async delete(thresholdId: ThresholdId): Promise<void> {
+    await ThresholdModel.deleteOne({ _id: thresholdId.value }).exec();
   }
 
-  private toDomain(doc: ThresholdDocument): Threshold {
-    return Threshold.reconstitute({
-      id: doc._id,
-      resourceType: doc.resourceType as ResourceType,
-      periodType: doc.periodType as PeriodType,
-      thresholdType: doc.thresholdType as ThresholdType,
-      value: doc.value,
-      createdAt: new Date(doc.createdAt),
-      updatedAt: new Date(doc.updatedAt),
-    });
-  }
-
-  private toPersistence(threshold: Threshold): ThresholdPersistence {
-    return {
-      _id: threshold.id.value,
-      resourceType: threshold.resourceType,
-      periodType: threshold.periodType,
-      thresholdType: threshold.thresholdType,
-      value: threshold.value.value,
-      createdAt: threshold.createdAt,
-      updatedAt: threshold.updatedAt,
-    };
+  private handleMongoError(error: unknown, threshold: Threshold): never {
+    if ((error as MongoError).code === 11000) {
+      throw new ThresholdAlreadyExistsError(
+        `${threshold.utilityType}-${threshold.thresholdType}-${threshold.periodType} already exists`,
+      );
+    }
+    throw error;
   }
 }
