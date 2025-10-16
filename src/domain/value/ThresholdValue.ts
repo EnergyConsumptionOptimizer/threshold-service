@@ -1,47 +1,31 @@
-import { InvalidThresholdValueError } from "../errors";
+import { InvalidThresholdValueError } from "@domain/errors";
 
 export class ThresholdValue {
-  private constructor(private readonly _value: number) {}
+  private constructor(private readonly limit: number) {}
 
-  static of(value: number): ThresholdValue {
-    if (value <= 0) {
+  static of(limit: number): ThresholdValue {
+    if (limit <= 0) {
       throw new InvalidThresholdValueError(
-        value,
-        "Threshold value must be greater than 0",
+        limit,
+        "Threshold value must be greater than zero",
       );
     }
-    return new ThresholdValue(value);
-  }
-
-  get value(): number {
-    return this._value;
+    return new ThresholdValue(limit);
   }
 
   equals(other: ThresholdValue): boolean {
-    return this._value === other._value;
+    return this.limit === other.limit;
   }
 
-  isGreaterThan(other: ThresholdValue): boolean {
-    return this._value > other._value;
-  }
-
-  isLessThan(other: ThresholdValue): boolean {
-    return this._value < other._value;
-  }
-
-  isGreaterThanOrEqual(other: ThresholdValue): boolean {
-    return this._value >= other._value;
-  }
-
-  isLessThanOrEqual(other: ThresholdValue): boolean {
-    return this._value <= other._value;
+  isBreachedBy(measured: number): boolean {
+    return measured > this.limit;
   }
 
   toString(): string {
-    return this._value.toString();
+    return this.limit.toString();
   }
 
-  valueOf(): number {
-    return this._value;
+  toPrimitive(): number {
+    return this.limit;
   }
 }
