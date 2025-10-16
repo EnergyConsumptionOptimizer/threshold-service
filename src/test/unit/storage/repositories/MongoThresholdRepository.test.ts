@@ -1,150 +1,97 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { MongoThresholdRepository } from "@storage/repositories/MongoThresholdRepository";
-import { ThresholdModel } from "@storage/models/ThresholdModel";
-import { ThresholdId } from "@domain/value/ThresholdId";
-import { ResourceType } from "@domain/value/ResourceType";
-import { PeriodType } from "@domain/value/PeriodType";
-import { ThresholdType } from "@domain/value/ThresholdType";
-import { Threshold } from "@domain/Threshold";
-import type { Query } from "mongoose";
-import type { ThresholdDocument } from "@storage/models/ThresholdModel";
-
-vi.mock("../../../../storage/models/ThresholdModel");
-
-const mockChain = <T>(value: T) =>
-  ({
-    lean: vi.fn().mockReturnThis(),
-    exec: vi.fn().mockResolvedValue(value),
-    sort: vi.fn().mockReturnThis(),
-  }) as unknown as Query<T, ThresholdDocument>;
-
-const mockDoc = {
-  _id: "123e4567-e89b-12d3-a456-426614174000",
-  resourceType: "electricity",
-  periodType: "daily",
-  thresholdType: "actual",
-  value: 100,
-  createdAt: new Date("2025-01-01"),
-  updatedAt: new Date("2025-01-01"),
-};
+import { MongoMemoryServer } from "mongodb-memory-server";
+import mongoose from "mongoose";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { Threshold } from "src/domain/Threshold";
+import { ThresholdId } from "src/domain/value/ThresholdId";
+import { MongoThresholdRepository } from "src/storage/repositories/MongoThresholdRepository";
+import { UtilityType } from "src/domain/value/UtilityType";
+import { ThresholdType } from "src/domain/value/ThresholdType";
+import { ThresholdValue } from "src/domain/value/ThresholdValue";
+import { PeriodType } from "src/domain/value/PeriodType";
 
 describe("MongoThresholdRepository", () => {
-  let repository: MongoThresholdRepository;
+  let mongod: MongoMemoryServer;
+  let repo: MongoThresholdRepository;
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    repository = new MongoThresholdRepository();
+  beforeAll(async () => {
+    mongod = await MongoMemoryServer.create();
+    await mongoose.connect(mongod.getUri());
+    repo = new MongoThresholdRepository();
   });
 
-  describe("findById", () => {
-    it("returns threshold when found", async () => {
-      vi.mocked(ThresholdModel.findById).mockReturnValue(mockChain(mockDoc));
-
-      const result = await repository.findById(ThresholdId.of(mockDoc._id));
-
-      expect(result?.id.value).toBe(mockDoc._id);
-    });
-
-    it("returns undefined when not found", async () => {
-      vi.mocked(ThresholdModel.findById).mockReturnValue(mockChain(null));
-
-      const result = await repository.findById(ThresholdId.of(mockDoc._id));
-
-      expect(result).toBeUndefined();
-    });
+  afterAll(async () => {
+    await mongoose.disconnect();
+    await mongod.stop();
   });
 
-  describe("findAll", () => {
-    it("returns all thresholds sorted by createdAt", async () => {
-      vi.mocked(ThresholdModel.find).mockReturnValue(mockChain([mockDoc]));
-
-      const result = await repository.findAll();
-
-      expect(result).toHaveLength(1);
-      expect(result[0].id.value).toBe(mockDoc._id);
-    });
+  beforeEach(async () => {
+    await mongoose.connection.db?.dropDatabase();
   });
 
-  describe("findByFilters", () => {
-    it("filters by resource type", async () => {
-      vi.mocked(ThresholdModel.find).mockReturnValue(mockChain([mockDoc]));
+  const makeThreshold = (overrides: Partial<Threshold> = {}): Threshold =>
+    ({
+      id: ThresholdId.of(overrides.id?.value || crypto.randomUUID()),
+      utilityType: overrides.utilityType || UtilityType.GAS,
+      thresholdType: overrides.thresholdType || ThresholdType.FORECAST,
+      value: overrides.value || ThresholdValue.of(10),
+      periodType: overrides.periodType || PeriodType.ONE_DAY,
+      isActive: overrides.isActive ?? true,
+    }) as Threshold;
 
-      await repository.findByFilters(ResourceType.ELECTRICITY);
+  it("saves a threshold", async () => {
+    const t = makeThreshold();
+    const saved = await repo.save(t);
 
-      expect(ThresholdModel.find).toHaveBeenCalledWith({
-        resourceType: ResourceType.ELECTRICITY,
-      });
-    });
-
-    it("filters by multiple types", async () => {
-      vi.mocked(ThresholdModel.find).mockReturnValue(mockChain([mockDoc]));
-
-      await repository.findByFilters(
-        ResourceType.ELECTRICITY,
-        PeriodType.DAILY,
-        ThresholdType.ACTUAL,
-      );
-
-      expect(ThresholdModel.find).toHaveBeenCalledWith({
-        resourceType: ResourceType.ELECTRICITY,
-        periodType: PeriodType.DAILY,
-        thresholdType: ThresholdType.ACTUAL,
-      });
-    });
+    expect(saved.utilityType).toBe(t.utilityType);
+    expect(saved.periodType).toBe(t.periodType);
+    expect(saved.thresholdType).toBe(t.thresholdType);
+    expect(saved.value.toPrimitive()).toBe(t.value.toPrimitive());
   });
 
-  describe("save", () => {
-    it("upserts threshold", async () => {
-      const execMock = { exec: vi.fn().mockResolvedValue(mockDoc) };
-      vi.mocked(ThresholdModel.findByIdAndUpdate).mockReturnValue(
-        execMock as unknown as Query<
-          ThresholdDocument | null,
-          ThresholdDocument
-        >,
-      );
+  it("retrieves a threshold by id", async () => {
+    const t = makeThreshold();
+    await repo.save(t);
 
-      const threshold = Threshold.create({
-        resourceType: ResourceType.ELECTRICITY,
-        periodType: PeriodType.DAILY,
-        thresholdType: ThresholdType.ACTUAL,
-        value: 100,
-      });
-
-      await repository.save(threshold);
-
-      expect(ThresholdModel.findByIdAndUpdate).toHaveBeenCalledWith(
-        threshold.id.value,
-        expect.objectContaining({ value: 100 }),
-        { upsert: true, new: true },
-      );
-    });
+    const found = await repo.findById(t.id);
+    expect(found).toBeDefined();
   });
 
-  describe("delete", () => {
-    it("deletes threshold by id", async () => {
-      const execMock = { exec: vi.fn().mockResolvedValue(mockDoc) };
-      vi.mocked(ThresholdModel.findByIdAndDelete).mockReturnValue(
-        execMock as unknown as Query<
-          ThresholdDocument | null,
-          ThresholdDocument
-        >,
-      );
+  it("finds by filters", async () => {
+    const t1 = makeThreshold({ utilityType: UtilityType.GAS });
+    const t2 = makeThreshold({ utilityType: UtilityType.WATER });
+    await repo.save(t1);
+    await repo.save(t2);
 
-      const threshold = Threshold.reconstitute({
-        id: mockDoc._id,
-        resourceType: ResourceType.ELECTRICITY,
-        periodType: PeriodType.DAILY,
-        thresholdType: ThresholdType.ACTUAL,
-        value: 100,
-        createdAt: mockDoc.createdAt,
-        updatedAt: mockDoc.updatedAt,
-      });
+    const results = await repo.findByFilters(UtilityType.GAS);
+    expect(results).toHaveLength(1);
+  });
 
-      await repository.delete(threshold);
+  it("updates a threshold", async () => {
+    const t = makeThreshold({ value: ThresholdValue.of(10) });
+    const saved = await repo.save(t);
 
-      expect(ThresholdModel.findByIdAndDelete).toHaveBeenCalledWith(
-        mockDoc._id,
-      );
+    const updated = await repo.update(saved.id, {
+      value: ThresholdValue.of(20),
     });
+    expect(updated?.value.toPrimitive()).toBe(20);
+  });
+
+  it("deletes a threshold", async () => {
+    const t = makeThreshold();
+    const saved = await repo.save(t);
+    await repo.delete(saved.id);
+
+    const found = await repo.findById(saved.id);
+    expect(found).toBeNull();
+  });
+
+  it("finds by status", async () => {
+    const active = makeThreshold({ isActive: true });
+    const inactive = makeThreshold({ isActive: false });
+    await repo.save(active);
+    await repo.save(inactive);
+
+    const results = await repo.findByStatus(true);
+    expect(results).toHaveLength(1);
   });
 });
