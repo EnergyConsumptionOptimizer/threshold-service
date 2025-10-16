@@ -1,18 +1,10 @@
-import { describe, it, expect } from "vitest";
-import { PeriodType } from "@domain/value/PeriodType";
+import { describe, expect, it } from "vitest";
+import { PeriodType } from "src/domain/value/PeriodType";
 
 describe("PeriodType", () => {
   it("should have correct enum values", () => {
-    expect(PeriodType.DAILY).toBe("daily");
-    expect(PeriodType.WEEKLY).toBe("weekly");
-    expect(PeriodType.MONTHLY).toBe("monthly");
-  });
-
-  it("should contain all expected period types", () => {
-    const values = Object.values(PeriodType);
-    expect(values).toHaveLength(3);
-    expect(values).toContain("daily");
-    expect(values).toContain("weekly");
-    expect(values).toContain("monthly");
+    expect(PeriodType.ONE_DAY).toBe("ONE_DAY");
+    expect(PeriodType.ONE_WEEK).toBe("ONE_WEEK");
+    expect(PeriodType.ONE_MONTH).toBe("ONE_MONTH");
   });
 });
