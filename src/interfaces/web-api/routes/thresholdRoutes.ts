@@ -14,7 +14,7 @@ export function ThresholdRouter(
     thresholdController.create,
   );
   router.get("/", authMiddleware.authenticate, thresholdController.list);
-  router.get("/:id", authMiddleware.authenticate, thresholdController.getById);
+  router.get("/:id", authMiddleware.authenticate, thresholdController.findById);
   router.put(
     "/:id",
     authMiddleware.authenticateAdmin,

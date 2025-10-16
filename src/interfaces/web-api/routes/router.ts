@@ -10,7 +10,7 @@ export function router(
   const router = Router();
 
   router.use(
-    "/api/thresholds",
+    "/thresholds",
     ThresholdRouter(thresholdController, authMiddleware),
   );
 
