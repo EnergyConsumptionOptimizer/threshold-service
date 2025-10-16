@@ -1,58 +1,70 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { CreateThresholdUseCase } from "@application/usecases/CreateThresholdUseCase";
-import { InMemoryThresholdRepository } from "../../../utils/InMemoryThresholdRepository";
-import { ResourceType } from "@domain/value/ResourceType";
-import { PeriodType } from "@domain/value/PeriodType";
-import { ThresholdType } from "@domain/value/ThresholdType";
-import { InvalidThresholdValueError } from "@domain/errors";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ThresholdRepositoryPort } from "src/domain/port/ThresholdRepositoryPort";
+import { UtilityType } from "src/domain/value/UtilityType";
+import { ThresholdType } from "src/domain/value/ThresholdType";
+import { ThresholdValue } from "src/domain/value/ThresholdValue";
+import { PeriodType } from "src/domain/value/PeriodType";
+import { ThresholdId } from "src/domain/value/ThresholdId";
+import { CreateThresholdUseCase } from "src/application/usecases/CreateThresholdUseCase";
+import { Threshold } from "@domain/Threshold";
 
 describe("CreateThresholdUseCase", () => {
   let useCase: CreateThresholdUseCase;
-  let repository: InMemoryThresholdRepository;
+  let mockSave: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    repository = new InMemoryThresholdRepository();
+    mockSave = vi
+      .fn()
+      .mockImplementation((threshold) => Promise.resolve(threshold));
+    const repository = {
+      save: mockSave,
+      findById: vi.fn(),
+      findAll: vi.fn(),
+      findByStatus: vi.fn(),
+      findByFilters: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    } as ThresholdRepositoryPort;
     useCase = new CreateThresholdUseCase(repository);
   });
 
-  it("should create threshold when unique", async () => {
-    const threshold = await useCase.execute(
-      ResourceType.ELECTRICITY,
-      PeriodType.DAILY,
+  it("should create threshold with placeholder id and save it", async () => {
+    const result = await useCase.save(
+      UtilityType.ELECTRICITY,
       ThresholdType.ACTUAL,
-      100,
+      ThresholdValue.of(100),
+      true,
     );
 
-    expect(threshold).toBeDefined();
-    expect(threshold.resourceType).toBe(ResourceType.ELECTRICITY);
-    expect(threshold.value.value).toBe(100);
+    expect(mockSave).toHaveBeenCalledOnce();
+    expect(mockSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: ThresholdId.of("id-placeholder"),
+      }),
+    );
+    expect(result.id).toEqual(ThresholdId.of("id-placeholder"));
   });
 
-  it("should throw ThresholdAlreadyExistsError when threshold already exists", async () => {
-    await useCase.execute(
-      ResourceType.ELECTRICITY,
-      PeriodType.DAILY,
-      ThresholdType.ACTUAL,
-      100,
+  it("should return saved threshold from repository", async () => {
+    const savedThreshold = Threshold.create(
+      ThresholdId.of("mock-id"),
+      UtilityType.GAS,
+      ThresholdValue.of(150),
+      ThresholdType.FORECAST,
+      true,
+      PeriodType.ONE_DAY,
     );
 
-    await expect(
-      useCase.execute(
-        ResourceType.ELECTRICITY,
-        PeriodType.DAILY,
-        ThresholdType.ACTUAL,
-        100,
-      ),
-    ).rejects.toThrow("Threshold already exists");
-  });
-  it("should validate positive value", async () => {
-    await expect(
-      useCase.execute(
-        ResourceType.ELECTRICITY,
-        PeriodType.DAILY,
-        ThresholdType.ACTUAL,
-        0,
-      ),
-    ).rejects.toThrow(InvalidThresholdValueError);
+    mockSave.mockResolvedValue(savedThreshold);
+
+    const result = await useCase.save(
+      UtilityType.GAS,
+      ThresholdType.FORECAST,
+      ThresholdValue.of(150),
+      true,
+      PeriodType.ONE_DAY,
+    );
+
+    expect(result).toBe(savedThreshold);
   });
 });
