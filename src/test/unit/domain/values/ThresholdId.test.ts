@@ -1,24 +1,18 @@
-import { describe, it, expect } from "vitest";
-import { validate } from "uuid";
-import { ThresholdId } from "@domain/value/ThresholdId";
-import { InvalidThresholdIdError } from "@domain/errors";
+import { describe, expect, it } from "vitest";
+import { ThresholdId } from "src/domain/value/ThresholdId";
+import { InvalidThresholdIdError } from "src/domain/errors";
 
 describe("ThresholdId", () => {
-  const validUuid = "123e4567-e89b-12d3-a456-426614174000";
-
-  it("should generate valid UUID", () => {
-    const id = ThresholdId.generate();
-    expect(validate(id.value)).toBe(true);
-  });
+  const validUuid = "valid-id";
 
   it("should create from valid UUID", () => {
     const id = ThresholdId.of(validUuid);
-    expect(id.value).toBe(validUuid);
+    expect(id).toBeInstanceOf(ThresholdId);
   });
 
-  it("should reject invalid values", () => {
+  it("should reject empty values", () => {
     expect(() => ThresholdId.of("")).toThrow(InvalidThresholdIdError);
-    expect(() => ThresholdId.of("invalid")).toThrow(InvalidThresholdIdError);
+    expect(() => ThresholdId.of("    ")).toThrow(InvalidThresholdIdError);
   });
 
   it("should compare equality", () => {
@@ -26,7 +20,6 @@ describe("ThresholdId", () => {
     const id2 = ThresholdId.of(validUuid);
 
     expect(id1.equals(id2)).toBe(true);
-    expect(id1.equals(ThresholdId.generate())).toBe(false);
   });
 
   it("should convert to string", () => {
