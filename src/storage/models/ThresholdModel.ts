@@ -1,35 +1,47 @@
-import { Schema, Document, model } from "mongoose";
+import { Document, model, Schema } from "mongoose";
+import { UtilityType } from "@domain/value/UtilityType";
+import { PeriodType } from "@domain/value/PeriodType";
+import { ThresholdType } from "@domain/value/ThresholdType";
 
 export interface ThresholdDocument extends Document {
-  _id: string;
-  resourceType: string;
-  periodType: string;
-  thresholdType: string;
-  value: number;
-  businessKey: string;
-  createdAt: Date;
-  updatedAt: Date;
+  readonly _id: string;
+  readonly utilityType: string;
+  readonly value: number;
+  readonly thresholdType: string;
+  readonly isActive: boolean;
+  readonly periodType?: string;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
 }
 
 const thresholdSchema = new Schema<ThresholdDocument>(
   {
     _id: { type: String, required: true },
-    resourceType: { type: String, required: true, index: true },
-    periodType: { type: String, required: true },
-    thresholdType: { type: String, required: true },
+    utilityType: {
+      type: String,
+      enum: Object.values(UtilityType),
+      required: true,
+    },
     value: { type: Number, required: true, min: 0 },
-    createdAt: { type: Date, required: true },
-    updatedAt: { type: Date, required: true },
+    thresholdType: {
+      type: String,
+      enum: Object.values(ThresholdType),
+      required: true,
+    },
+    isActive: { type: Boolean, required: true, default: true },
+    periodType: {
+      type: String,
+      enum: Object.values(PeriodType),
+      required: false,
+    },
   },
   {
-    versionKey: false,
-    _id: false,
-    collection: "thresholds",
+    timestamps: true,
   },
 );
 
 thresholdSchema.index(
-  { resourceType: 1, periodType: 1, thresholdType: 1 },
+  { utilityType: 1, periodType: 1, thresholdType: 1 },
   { unique: true },
 );
 
