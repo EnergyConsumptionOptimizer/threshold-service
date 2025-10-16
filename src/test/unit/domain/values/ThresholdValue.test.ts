@@ -1,12 +1,14 @@
-import { describe, it, expect } from "vitest";
-import { ThresholdValue } from "@domain/value/ThresholdValue";
-import { InvalidThresholdValueError } from "@domain/errors";
+import { describe, expect, it } from "vitest";
+import { ThresholdValue } from "src/domain/value/ThresholdValue";
+import { InvalidThresholdValueError } from "src/domain/errors";
 
 describe("ThresholdValue", () => {
   it("should create valid positive values", () => {
-    expect(ThresholdValue.of(100).value).toBe(100);
-    expect(ThresholdValue.of(50.5).value).toBe(50.5);
-    expect(ThresholdValue.of(0.001).value).toBe(0.001);
+    const value = ThresholdValue.of(100);
+    const small = ThresholdValue.of(0.001);
+
+    expect(value.toPrimitive()).toBe(100);
+    expect(small.toPrimitive()).toBe(0.001);
   });
 
   it("should reject zero and negative values", () => {
@@ -23,20 +25,18 @@ describe("ThresholdValue", () => {
     expect(value1.equals(different)).toBe(false);
   });
 
-  it("should compare values for ordering", () => {
-    const small = ThresholdValue.of(50);
-    const large = ThresholdValue.of(100);
+  it("should detect when a measured value breaches the threshold", () => {
+    const threshold = ThresholdValue.of(100);
 
-    expect(large.isGreaterThan(small)).toBe(true);
-    expect(small.isLessThan(large)).toBe(true);
-    expect(large.isGreaterThanOrEqual(small)).toBe(true);
-    expect(small.isLessThanOrEqual(large)).toBe(true);
+    expect(threshold.isBreachedBy(150)).toBe(true);
+    expect(threshold.isBreachedBy(100)).toBe(false);
+    expect(threshold.isBreachedBy(50)).toBe(false);
   });
 
-  it("should convert to primitive correctly", () => {
-    const value = ThresholdValue.of(100.5);
+  it("should convert to string and primitive correctly", () => {
+    const value = ThresholdValue.of(100);
 
-    expect(value.toString()).toBe("100.5");
-    expect(value.valueOf()).toBe(100.5);
+    expect(value.toString()).toBe("100");
+    expect(value.toPrimitive()).toBe(100);
   });
 });
