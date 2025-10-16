@@ -1,4 +1,5 @@
 export enum ThresholdType {
-  ACTUAL = "actual",
-  FORECAST = "forecast",
+  ACTUAL = "ACTUAL",
+  HISTORICAL = "HISTORICAL",
+  FORECAST = "FORECAST",
 }
