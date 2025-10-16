@@ -1,126 +1,57 @@
-import { ResourceType } from "./value/ResourceType";
-import { PeriodType } from "./value/PeriodType";
-import { ThresholdType } from "./value/ThresholdType";
-import { ThresholdValue } from "./value/ThresholdValue";
-import { ThresholdId } from "./value/ThresholdId";
+import { UtilityType } from "@domain/value/UtilityType";
+import { ThresholdValue } from "@domain/value/ThresholdValue";
+import { ThresholdId } from "@domain/value/ThresholdId";
+import { ThresholdType } from "@domain/value/ThresholdType";
+import { PeriodType } from "@domain/value/PeriodType";
+import {
+  ActualThresholdWithPeriodError,
+  MissingPeriodTypeForThresholdError,
+} from "@domain/errors";
 
 export class Threshold {
   private constructor(
-    private readonly _id: ThresholdId,
-    private readonly _resourceType: ResourceType,
-    private readonly _periodType: PeriodType,
-    private readonly _thresholdType: ThresholdType,
-    private readonly _value: ThresholdValue,
-    private readonly _createdAt: Date,
-    private readonly _updatedAt: Date,
-  ) {}
+    public readonly id: ThresholdId,
+    public readonly utilityType: UtilityType,
+    public readonly value: ThresholdValue,
+    public readonly thresholdType: ThresholdType,
+    public readonly isActive: boolean,
+    public readonly periodType?: PeriodType,
+  ) {
+    this.validate();
+  }
+  private validate(): void {
+    if (this.thresholdType === ThresholdType.ACTUAL && this.periodType) {
+      throw new ActualThresholdWithPeriodError();
+    }
 
-  static create(params: {
-    resourceType: ResourceType;
-    periodType: PeriodType;
-    thresholdType: ThresholdType;
-    value: number;
-  }): Threshold {
-    const id = ThresholdId.generate();
-    const validatedValue = ThresholdValue.of(params.value);
-    const now = new Date();
+    const requiresPeriod = [
+      ThresholdType.HISTORICAL,
+      ThresholdType.FORECAST,
+    ].includes(this.thresholdType);
+    if (requiresPeriod && !this.periodType) {
+      throw new MissingPeriodTypeForThresholdError(this.thresholdType);
+    }
+  }
 
-    return new Threshold(
-      id,
-      params.resourceType,
-      params.periodType,
-      params.thresholdType,
-      validatedValue,
-      now,
-      now,
+  static create(
+    id: ThresholdId,
+    utilityType: UtilityType,
+    value: ThresholdValue,
+    type: ThresholdType,
+    isActive = false,
+    periodType?: PeriodType,
+  ): Threshold {
+    return new Threshold(id, utilityType, value, type, isActive, periodType);
+  }
+
+  update(attrs: Partial<Threshold>): Threshold {
+    return Threshold.create(
+      this.id,
+      attrs.utilityType ?? this.utilityType,
+      attrs.value ?? this.value,
+      attrs.thresholdType ?? this.thresholdType,
+      attrs.isActive ?? this.isActive,
+      attrs.periodType ?? this.periodType,
     );
-  }
-
-  static reconstitute(data: {
-    id: string;
-    resourceType: ResourceType;
-    periodType: PeriodType;
-    thresholdType: ThresholdType;
-    value: number;
-    createdAt: Date;
-    updatedAt: Date;
-  }): Threshold {
-    return new Threshold(
-      ThresholdId.of(data.id),
-      data.resourceType,
-      data.periodType,
-      data.thresholdType,
-      ThresholdValue.of(data.value),
-      data.createdAt,
-      data.updatedAt,
-    );
-  }
-
-  updateValue(newValue: number): Threshold {
-    return new Threshold(
-      this._id,
-      this._resourceType,
-      this._periodType,
-      this._thresholdType,
-      ThresholdValue.of(newValue),
-      this._createdAt,
-      new Date(),
-    );
-  }
-
-  getBusinessKey(): string {
-    return `${this._resourceType}-${this._periodType}-${this._thresholdType}`;
-  }
-
-  static createBusinessKey(
-    resourceType: ResourceType,
-    periodType: PeriodType,
-    thresholdType: ThresholdType,
-  ): string {
-    return `${resourceType}-${periodType}-${thresholdType}`;
-  }
-
-  isExceededBy(actualValue: number): boolean {
-    return actualValue > this._value.value;
-  }
-
-  equals(other: Threshold): boolean {
-    return this._id.equals(other._id) && this.hasSameConfiguration(other);
-  }
-
-  hasSameConfiguration(other: Threshold): boolean {
-    return (
-      this._resourceType === other._resourceType &&
-      this._periodType === other._periodType &&
-      this._thresholdType === other._thresholdType
-    );
-  }
-
-  get id(): ThresholdId {
-    return this._id;
-  }
-
-  get resourceType(): ResourceType {
-    return this._resourceType;
-  }
-
-  get periodType(): PeriodType {
-    return this._periodType;
-  }
-
-  get thresholdType(): ThresholdType {
-    return this._thresholdType;
-  }
-
-  get value(): ThresholdValue {
-    return this._value;
-  }
-
-  get createdAt(): Date {
-    return new Date(this._createdAt.getTime());
-  }
-
-  get updatedAt(): Date {
-    return new Date(this._updatedAt.getTime());
   }
 }
