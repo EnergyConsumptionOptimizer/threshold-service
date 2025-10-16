@@ -1,3 +1,5 @@
+import { ThresholdType } from "@domain/value/ThresholdType";
+
 export class BaseDomainError extends Error {
   constructor(baseMessage: string, reason?: string) {
     super(reason ? `${baseMessage}: ${reason}` : baseMessage);
@@ -32,5 +34,17 @@ export class InvalidQueryParametersError extends BaseDomainError {
 export class InvalidThresholdIdError extends BaseDomainError {
   constructor(id: string, reason?: string) {
     super(`Invalid threshold ID format: ${id}`, reason);
+  }
+}
+
+export class ActualThresholdWithPeriodError extends BaseDomainError {
+  constructor() {
+    super("Actual threshold cannot have a period type");
+  }
+}
+
+export class MissingPeriodTypeForThresholdError extends BaseDomainError {
+  constructor(thresholdType: ThresholdType) {
+    super(`${thresholdType} threshold requires a period type`);
   }
 }
