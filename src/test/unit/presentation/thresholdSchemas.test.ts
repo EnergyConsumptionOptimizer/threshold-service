@@ -1,79 +1,43 @@
-import { describe, it, expect } from "vitest";
-import { ResourceType } from "@domain/value/ResourceType";
-import { PeriodType } from "@domain/value/PeriodType";
-import { ThresholdType } from "@domain/value/ThresholdType";
-import { z } from "zod";
-import {
-  createThresholdSchema,
-  listThresholdSchema,
-  updateThresholdSchema,
-} from "@presentation/schemas/thresholdSchemas";
+import { describe, expect, it } from "vitest";
+import { createThresholdSchema } from "src/presentation/schemas/thresholdSchemas";
+import { UtilityType } from "src/domain/value/UtilityType";
+import { ThresholdType } from "src/domain/value/ThresholdType";
+import { PeriodType } from "src/domain/value/PeriodType";
+import { ThresholdValue } from "src/domain/value/ThresholdValue";
 
-describe("Threshold Schemas", () => {
-  describe("createThresholdSchema", () => {
-    it("should parse valid input", () => {
-      const validInput = {
-        resourceType: ResourceType.ELECTRICITY,
-        periodType: PeriodType.DAILY,
-        thresholdType: ThresholdType.ACTUAL,
-        value: 100,
-      };
-      expect(() => createThresholdSchema.parse(validInput)).not.toThrow();
-    });
+describe("createThresholdSchema", () => {
+  it("parses valid input", () => {
+    const input = {
+      utilityType: UtilityType.GAS,
+      thresholdType: ThresholdType.FORECAST,
+      isActive: true,
+      value: 10,
+      periodType: PeriodType.ONE_DAY,
+    };
 
-    it("should reject invalid input", () => {
-      const invalidInput = {
-        resourceType: "INVALID",
-        periodType: PeriodType.DAILY,
-        thresholdType: ThresholdType.ACTUAL,
-        value: 100,
-      };
-      expect(() => createThresholdSchema.parse(invalidInput)).toThrow(
-        z.ZodError,
-      );
-    });
+    const parsed = createThresholdSchema.parse(input);
+    expect(parsed.value).toBeInstanceOf(ThresholdValue);
+    expect(parsed.value.toPrimitive()).toBe(10);
   });
 
-  describe("updateThresholdSchema", () => {
-    it("should parse valid value", () => {
-      expect(() => updateThresholdSchema.parse({ value: 200 })).not.toThrow();
-    });
-
-    it("should reject invalid value", () => {
-      expect(() =>
-        updateThresholdSchema.parse({ value: "not-a-number" }),
-      ).toThrow(z.ZodError);
-    });
+  it("rejects non-positive values", () => {
+    const input = {
+      utilityType: UtilityType.GAS,
+      thresholdType: ThresholdType.FORECAST,
+      isActive: true,
+      value: 0,
+    };
+    expect(() => createThresholdSchema.parse(input)).toThrow();
   });
 
-  describe("listThresholdSchema", () => {
-    it("should accept empty query", () => {
-      expect(() => listThresholdSchema.parse({})).not.toThrow();
-    });
-
-    it("should parse valid partial filters", () => {
-      expect(() =>
-        listThresholdSchema.parse({
-          resourceType: ResourceType.ELECTRICITY,
-          periodType: PeriodType.DAILY,
-        }),
-      ).not.toThrow();
-    });
-
-    it("should parse valid filters", () => {
-      expect(() =>
-        listThresholdSchema.parse({
-          resourceType: ResourceType.ELECTRICITY,
-          periodType: PeriodType.DAILY,
-          thresholdType: ThresholdType.ACTUAL,
-        }),
-      ).not.toThrow();
-    });
-
-    it("should reject invalid filters", () => {
-      expect(() =>
-        listThresholdSchema.parse({ resourceType: "INVALID" }),
-      ).toThrow(z.ZodError);
-    });
+  it("allows optional periodType", () => {
+    const input = {
+      utilityType: UtilityType.GAS,
+      thresholdType: ThresholdType.FORECAST,
+      isActive: true,
+      value: 5,
+    };
+    const parsed = createThresholdSchema.parse(input);
+    expect(parsed.periodType).toBeUndefined();
   });
 });
