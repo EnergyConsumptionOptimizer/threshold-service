@@ -1,5 +1,5 @@
 export enum PeriodType {
-  DAILY = "daily",
-  WEEKLY = "weekly",
-  MONTHLY = "monthly",
+  ONE_DAY = "ONE_DAY",
+  ONE_WEEK = "ONE_WEEK",
+  ONE_MONTH = "ONE_MONTH",
 }
