@@ -6,7 +6,7 @@ COPY build.gradle.kts settings.gradle.kts gradle.properties ./
 COPY gradle/ ./gradle/
 COPY . .
 
-RUN gradle build
+RUN gradle assemble
 
 # Stage 2: Runtime with Node.js
 FROM node:24-alpine AS runtime
