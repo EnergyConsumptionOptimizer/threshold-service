@@ -1,38 +1,25 @@
-import { validate, v4 as uuid } from "uuid";
-import { InvalidThresholdIdError } from "../errors";
+import { InvalidThresholdIdError } from "@domain/errors";
 
 export class ThresholdId {
-  private constructor(private readonly _value: string) {}
-
-  static generate(): ThresholdId {
-    return new ThresholdId(uuid());
-  }
+  private constructor(public readonly value: string) {}
 
   static of(value: string): ThresholdId {
-    if (!value.trim()) {
-      throw new InvalidThresholdIdError(value, "cannot be empty");
+    const normalized = value?.trim();
+    if (!normalized) {
+      throw new InvalidThresholdIdError(
+        value,
+        "ThresholdId cannot be empty or blank",
+      );
     }
-
-    if (!validate(value)) {
-      throw new InvalidThresholdIdError(value);
-    }
-
-    return new ThresholdId(value);
-  }
-
-  get value(): string {
-    return this._value;
-  }
-
-  equals(other: ThresholdId): boolean {
-    return other.value === this._value;
+    return new ThresholdId(normalized);
   }
 
   toString(): string {
-    return this._value;
+    return this.value;
   }
 
-  valueOf(): string {
-    return this._value;
+  equals(other: ThresholdId): boolean {
+    if (!other) return false;
+    return this.value === other.value;
   }
 }
