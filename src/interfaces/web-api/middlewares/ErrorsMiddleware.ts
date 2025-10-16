@@ -1,9 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 import {
+  ActualThresholdWithPeriodError,
   InvalidQueryParametersError,
   InvalidThresholdIdError,
   InvalidThresholdValueError,
+  MissingPeriodTypeForThresholdError,
   ThresholdAlreadyExistsError,
   ThresholdNotFoundError,
 } from "@domain/errors";
@@ -28,10 +30,16 @@ export const errorsHandler = (
     return res.status(404).json(msgError(error.message));
   }
 
+  if (error instanceof InvalidThresholdIdError) {
+    return res.status(400).json(msgError(error.message));
+  }
+
   if (
     error instanceof InvalidThresholdValueError ||
     error instanceof InvalidQueryParametersError ||
-    error instanceof InvalidThresholdIdError
+    error instanceof InvalidThresholdIdError ||
+    error instanceof ActualThresholdWithPeriodError ||
+    error instanceof MissingPeriodTypeForThresholdError
   ) {
     return res.status(400).json(msgError(error.message));
   }
@@ -41,7 +49,11 @@ export const errorsHandler = (
       error: "ValidationError",
       message: "Invalid request payload",
       code: "VALIDATION_ERROR",
-      details: error.issues.map((i) => ({ path: i.path, message: i.message })),
+      details: error.issues.map((issue) => ({
+        path: issue.path.join("."),
+        message: issue.message,
+        code: issue.code,
+      })),
     });
   }
 
