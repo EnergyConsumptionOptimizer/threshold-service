@@ -36,12 +36,11 @@ export class AuthMiddleware {
       next();
     } catch (error) {
       if (error instanceof InvalidTokenError) {
-        res.status(401).json({});
+        res.status(401).json({ error: error.message });
         return;
       }
 
       if (axios.isAxiosError(error) && error.response?.status === 401) {
-        console.log(error.response);
         res.status(error.response?.status).json(error.response?.data);
         return;
       }
@@ -64,7 +63,7 @@ export class AuthMiddleware {
       next();
     } catch (error) {
       if (error instanceof InvalidTokenError) {
-        res.status(403).json({ error: error.message });
+        res.status(401).json({ error: error.message });
         return;
       }
 
