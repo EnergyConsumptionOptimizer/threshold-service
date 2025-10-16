@@ -1,53 +1,83 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { InMemoryThresholdRepository } from "../../../utils/InMemoryThresholdRepository";
-import { UpdateThresholdUseCase } from "@application/usecases/UpdateThresholdUseCase";
-import { Threshold } from "@domain/Threshold";
-import { ResourceType } from "@domain/value/ResourceType";
-import { PeriodType } from "@domain/value/PeriodType";
-import { ThresholdType } from "@domain/value/ThresholdType";
-import { ThresholdId } from "@domain/value/ThresholdId";
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  vi,
+} from "vitest";
+import { UpdateThresholdUseCase } from "src/application/usecases/UpdateThresholdUseCase";
+import { ThresholdRepositoryPort } from "src/domain/port/ThresholdRepositoryPort";
+import { Threshold } from "src/domain/Threshold";
+import { ThresholdId } from "src/domain/value/ThresholdId";
+import { ThresholdValue } from "src/domain/value/ThresholdValue";
+import { UtilityType } from "src/domain/value/UtilityType";
+import { PeriodType } from "src/domain/value/PeriodType";
+import { ThresholdType } from "src/domain/value/ThresholdType";
 
 describe("UpdateThresholdUseCase", () => {
   let useCase: UpdateThresholdUseCase;
-  let repository: InMemoryThresholdRepository;
+  let repository: ThresholdRepositoryPort;
+  let updateMock: MockInstance<
+    (id: ThresholdId, attrs: Partial<Threshold>) => Promise<Threshold | null>
+  >;
+
+  const mockThreshold = Threshold.create(
+    ThresholdId.of("1"),
+    UtilityType.GAS,
+    ThresholdValue.of(10),
+    ThresholdType.FORECAST,
+    true,
+    PeriodType.ONE_DAY,
+  );
 
   beforeEach(() => {
-    repository = new InMemoryThresholdRepository();
+    updateMock = vi.fn();
+    repository = {
+      update: updateMock,
+      save: vi.fn(),
+      findById: vi.fn(),
+      findAll: vi.fn(),
+      findByFilters: vi.fn(),
+      findByStatus: vi.fn(),
+      delete: vi.fn(),
+    } as unknown as ThresholdRepositoryPort;
+
     useCase = new UpdateThresholdUseCase(repository);
   });
 
-  it("should update existing threshold", async () => {
-    const threshold = Threshold.create({
-      resourceType: ResourceType.ELECTRICITY,
-      periodType: PeriodType.DAILY,
-      thresholdType: ThresholdType.ACTUAL,
-      value: 100,
-    });
-    await repository.save(threshold);
+  it("should update a threshold and return it", async () => {
+    const id = ThresholdId.of("1");
+    const attrs: Partial<Threshold> = { value: ThresholdValue.of(20) };
 
-    const updated = await useCase.executeById(threshold.id, 200);
-
-    expect(updated).toBeDefined();
-    expect(updated.value.value).toBe(200);
-  });
-
-  it("should throw ThresholdNotFoundError when threshold not found", async () => {
-    await expect(
-      useCase.executeById(
-        ThresholdId.of("123e4567-e89b-12d3-a456-426614174444"),
-        100,
+    updateMock.mockResolvedValue(
+      Threshold.create(
+        mockThreshold.id,
+        mockThreshold.utilityType,
+        attrs.value ?? mockThreshold.value,
+        mockThreshold.thresholdType,
+        mockThreshold.isActive,
+        mockThreshold.periodType,
       ),
-    ).rejects.toThrow("Threshold not found");
-  });
-  it("should validate positive value", async () => {
-    const threshold = Threshold.create({
-      resourceType: ResourceType.ELECTRICITY,
-      periodType: PeriodType.DAILY,
-      thresholdType: ThresholdType.ACTUAL,
-      value: 100,
-    });
-    await repository.save(threshold);
+    );
 
-    await expect(useCase.executeById(threshold.id, 0)).rejects.toThrow();
+    const result = await useCase.update(id, attrs);
+
+    expect(updateMock).toHaveBeenCalledOnce();
+    expect(updateMock).toHaveBeenCalledWith(id, attrs);
+    expect(result?.value).toEqual(ThresholdValue.of(20));
+  });
+
+  it("should return null if threshold does not exist", async () => {
+    const id = ThresholdId.of("2");
+    const attrs: Partial<Threshold> = { value: ThresholdValue.of(20) };
+
+    updateMock.mockResolvedValue(null);
+
+    const result = await useCase.update(id, attrs);
+
+    expect(updateMock).toHaveBeenCalledOnce();
+    expect(updateMock).toHaveBeenCalledWith(id, attrs);
+    expect(result).toBeNull();
   });
 });
