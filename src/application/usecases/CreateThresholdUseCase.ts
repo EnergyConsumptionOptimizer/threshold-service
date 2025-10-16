@@ -1,37 +1,29 @@
 import { PeriodType } from "@domain/value/PeriodType";
-import { ResourceType } from "@domain/value/ResourceType";
+import { UtilityType } from "@domain/value/UtilityType";
 import { ThresholdType } from "@domain/value/ThresholdType";
 import { ThresholdRepositoryPort } from "@domain/port/ThresholdRepositoryPort";
 import { Threshold } from "@domain/Threshold";
-import { ThresholdAlreadyExistsError } from "@domain/errors";
+import { ThresholdId } from "@domain/value/ThresholdId";
+import { ThresholdValue } from "@domain/value/ThresholdValue";
 
 export class CreateThresholdUseCase {
   constructor(private readonly repository: ThresholdRepositoryPort) {}
 
-  public async execute(
-    resourceType: ResourceType,
-    periodType: PeriodType,
+  public async save(
+    utilityType: UtilityType,
     thresholdType: ThresholdType,
-    value: number,
+    value: ThresholdValue,
+    isActive: boolean,
+    periodType?: PeriodType,
   ): Promise<Threshold> {
-    const existing = await this.repository.findByFilters(
-      resourceType,
-      periodType,
-      thresholdType,
-    );
-    if (existing.length > 0) {
-      throw new ThresholdAlreadyExistsError(
-        Threshold.createBusinessKey(resourceType, periodType, thresholdType),
-      );
-    }
-
-    const threshold = Threshold.create({
-      resourceType,
-      periodType,
-      thresholdType,
+    const threshold = Threshold.create(
+      ThresholdId.of("id-placeholder"),
+      utilityType,
       value,
-    });
-    await this.repository.save(threshold);
-    return threshold;
+      thresholdType,
+      isActive,
+      periodType,
+    );
+    return this.repository.save(threshold);
   }
 }
