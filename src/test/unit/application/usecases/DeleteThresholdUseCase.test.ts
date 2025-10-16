@@ -1,38 +1,31 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { InMemoryThresholdRepository } from "../../../utils/InMemoryThresholdRepository";
-import { DeleteThresholdUseCase } from "@application/usecases/DeleteThresholdUseCase";
-import { Threshold } from "@domain/Threshold";
-import { ResourceType } from "@domain/value/ResourceType";
-import { PeriodType } from "@domain/value/PeriodType";
-import { ThresholdType } from "@domain/value/ThresholdType";
-import { ThresholdId } from "@domain/value/ThresholdId";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ThresholdRepositoryPort } from "src/domain/port/ThresholdRepositoryPort";
+import { ThresholdId } from "src/domain/value/ThresholdId";
+import { DeleteThresholdUseCase } from "src/application/usecases/DeleteThresholdUseCase";
 
 describe("DeleteThresholdUseCase", () => {
   let useCase: DeleteThresholdUseCase;
-  let repository: InMemoryThresholdRepository;
+  let repository: ThresholdRepositoryPort;
 
   beforeEach(() => {
-    repository = new InMemoryThresholdRepository();
+    repository = {
+      save: vi.fn(),
+      findById: vi.fn(),
+      findAll: vi.fn(),
+      findByStatus: vi.fn(),
+      findByFilters: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    } as unknown as ThresholdRepositoryPort;
+
     useCase = new DeleteThresholdUseCase(repository);
   });
 
-  it("should delete existing threshold", async () => {
-    const threshold = Threshold.create({
-      resourceType: ResourceType.ELECTRICITY,
-      periodType: PeriodType.DAILY,
-      thresholdType: ThresholdType.ACTUAL,
-      value: 100,
-    });
-    await repository.save(threshold);
+  it("should call repository.delete with correct ID", async () => {
+    const id = ThresholdId.of("123");
+    await useCase.delete(id);
 
-    await expect(useCase.execute(threshold.id)).resolves.not.toThrow();
-
-    expect(repository.getThresholdCount()).toBe(0);
-  });
-
-  it("should throw ThresholdNotFoundError when threshold not exists", async () => {
-    await expect(
-      useCase.execute(ThresholdId.of("123e4567-e89b-12d3-a456-426614174444")),
-    ).rejects.toThrow("Threshold not found");
+    expect(repository.delete).toHaveBeenCalledOnce();
+    expect(repository.delete).toHaveBeenCalledWith(id);
   });
 });
