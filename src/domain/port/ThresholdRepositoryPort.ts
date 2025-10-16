@@ -1,21 +1,27 @@
 import { Threshold } from "../Threshold";
 import { ThresholdId } from "../value/ThresholdId";
-import { ResourceType } from "../value/ResourceType";
+import { UtilityType } from "../value/UtilityType";
 import { PeriodType } from "../value/PeriodType";
 import { ThresholdType } from "../value/ThresholdType";
 
 export interface ThresholdRepositoryPort {
-  findById(id: ThresholdId): Promise<Threshold | undefined>;
+  findById(thresholdId: ThresholdId): Promise<Threshold | null>;
 
   findAll(): Promise<Threshold[]>;
 
   findByFilters(
-    resourceType?: ResourceType,
+    utilityType?: UtilityType,
     periodType?: PeriodType,
     thresholdType?: ThresholdType,
+    isActive?: boolean,
   ): Promise<Threshold[]>;
 
-  save(threshold: Threshold): Promise<void>;
+  save(threshold: Threshold): Promise<Threshold>;
 
-  delete(threshold: Threshold): Promise<void>;
+  delete(thresholdId: ThresholdId): Promise<void>;
+
+  update(
+    thresholdId: ThresholdId,
+    attrs: Partial<Threshold>,
+  ): Promise<Threshold | null>;
 }
