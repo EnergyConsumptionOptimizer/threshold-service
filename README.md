@@ -1,2 +1,2 @@
-# Template-for-TypeScript-projects
-A template repository for kickstarting the development of TypeScript projects
+# Threshold Service
+E.C.O. Threshold Service repository
