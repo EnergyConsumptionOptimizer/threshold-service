@@ -3,8 +3,9 @@ import mongoose from "mongoose";
 import app from "./app.js";
 
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGO_URI;
-
+const MONGO_URI =
+  process.env.MONGO_URI ||
+  `mongodb://${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGO_DB}`;
 if (!MONGO_URI) {
   console.error("MONGO_URI is not defined in environment variables.");
   process.exit(1);
