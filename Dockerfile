@@ -1,5 +1,5 @@
 # Stage 1: Build with Gradle
-FROM gradle:9.1.0-jdk-jammy AS build
+FROM gradle:9.2.0-jdk-jammy AS build
 WORKDIR /usr/src/app
 
 COPY build.gradle.kts settings.gradle.kts gradle.properties ./
