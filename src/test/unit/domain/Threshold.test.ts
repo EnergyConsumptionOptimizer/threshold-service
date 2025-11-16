@@ -188,7 +188,7 @@ describe("Threshold", () => {
         ThresholdState.DISABLED,
       );
 
-      const result = threshold.check(999); // anche se supera, non deve cambiare stato
+      const result = threshold.check(999);
 
       expect(result.thresholdState).toBe(ThresholdState.DISABLED);
     });
