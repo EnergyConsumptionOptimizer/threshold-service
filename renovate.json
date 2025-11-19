@@ -3,8 +3,5 @@
     "github>DanySK/renovate-config:default.json",
     "github>DanySK/renovate-config:docker-image.json",
     "github>DanySK/renovate-config:kotlin.json"
-  ],
-  "automerge": true,
-  "platformAutomerge": true,
-  "automergeStrategy": "rebase"
+  ]
 }
