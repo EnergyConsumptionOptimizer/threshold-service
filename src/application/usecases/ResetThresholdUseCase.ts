@@ -6,7 +6,7 @@ import { ThresholdState } from "@domain/value/ThresholdState";
 export class ResetThresholdUseCase {
   constructor(private readonly repository: ThresholdRepositoryPort) {}
 
-  public async reset(): Promise<Threshold[]> {
+  async reset(): Promise<Threshold[]> {
     const now = new Date();
     const thresholds = await this.repository.findAll();
     const toReset: Threshold[] = thresholds.filter(
