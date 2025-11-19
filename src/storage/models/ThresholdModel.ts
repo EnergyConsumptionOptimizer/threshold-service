@@ -15,29 +15,22 @@ export interface ThresholdDocument extends Document {
   readonly updatedAt: Date;
 }
 
+const requiredEnum = (values: string[]) => ({
+  type: String,
+  enum: values,
+  required: true,
+});
+
 const thresholdSchema = new Schema<ThresholdDocument>(
   {
     _id: { type: String, required: true },
-    utilityType: {
-      type: String,
-      enum: Object.values(UtilityType),
-      required: true,
-    },
+    utilityType: requiredEnum(Object.values(UtilityType)),
     value: { type: Number, required: true, min: 0 },
-    thresholdType: {
-      type: String,
-      enum: Object.values(ThresholdType),
-      required: true,
-    },
-    thresholdState: {
-      type: String,
-      enum: Object.values(ThresholdState),
-      required: true,
-    },
+    thresholdType: requiredEnum(Object.values(ThresholdType)),
+    thresholdState: requiredEnum(Object.values(ThresholdState)),
     periodType: {
       type: String,
       enum: Object.values(PeriodType),
-      required: false,
     },
   },
   {
