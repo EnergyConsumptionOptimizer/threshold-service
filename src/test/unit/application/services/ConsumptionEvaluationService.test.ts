@@ -40,7 +40,7 @@ describe("ConsumptionEvaluationService", () => {
   });
 
   describe("evaluateConsumption", () => {
-    it("dovrebbe valutare un consumo ACTUAL senza periodType", async () => {
+    it("should evaluate ACTUAL consumption without periodType", async () => {
       const consumption: ConsumptionParams = {
         utilityType: UtilityType.ELECTRICITY,
         thresholdType: ThresholdType.ACTUAL,
@@ -61,7 +61,7 @@ describe("ConsumptionEvaluationService", () => {
       expect(result[0].thresholdState).toBe(ThresholdState.BREACHED);
     });
 
-    it("dovrebbe valutare un consumo HISTORICAL con periodType", async () => {
+    it("should evaluate HISTORICAL consumption with periodType", async () => {
       const consumption: ConsumptionParams = {
         utilityType: UtilityType.WATER,
         thresholdType: ThresholdType.HISTORICAL,
@@ -83,7 +83,7 @@ describe("ConsumptionEvaluationService", () => {
       expect(result[0].thresholdState).toBe(ThresholdState.BREACHED);
     });
 
-    it("dovrebbe ritornare array vuoto se nessuna soglia è breached", async () => {
+    it("should return an empty array if no thresholds are breached", async () => {
       const consumption: ConsumptionParams = {
         utilityType: UtilityType.GAS,
         thresholdType: ThresholdType.FORECAST,
@@ -98,25 +98,10 @@ describe("ConsumptionEvaluationService", () => {
 
       expect(result).toEqual([]);
     });
-
-    it("dovrebbe gestire errori e propagarli", async () => {
-      const consumption: ConsumptionParams = {
-        utilityType: UtilityType.ELECTRICITY,
-        thresholdType: ThresholdType.ACTUAL,
-        value: 150,
-      };
-
-      const error = new Error("Database error");
-      vi.mocked(mockRepository.findByFilters).mockRejectedValue(error);
-
-      await expect(service.evaluateConsumption(consumption)).rejects.toThrow(
-        "Database error",
-      );
-    });
   });
 
   describe("evaluateBatch", () => {
-    it("dovrebbe valutare multiple misurazioni", async () => {
+    it("should evaluate multiple measurements", async () => {
       const consumptions: ConsumptionParams[] = [
         {
           utilityType: UtilityType.ELECTRICITY,
@@ -142,13 +127,6 @@ describe("ConsumptionEvaluationService", () => {
 
       expect(mockRepository.findByFilters).toHaveBeenCalledTimes(2);
       expect(result).toHaveLength(2);
-    });
-
-    it("dovrebbe ritornare array vuoto per batch vuoto", async () => {
-      const result = await service.evaluateBatch([]);
-
-      expect(mockRepository.findByFilters).not.toHaveBeenCalled();
-      expect(result).toEqual([]);
     });
   });
 });

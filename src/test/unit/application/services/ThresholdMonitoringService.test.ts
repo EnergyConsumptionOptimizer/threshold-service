@@ -52,13 +52,13 @@ describe("ThresholdMonitoringService", () => {
   });
 
   describe("start", () => {
-    it("dovrebbe connettersi al notification port", async () => {
+    it("should connect to notification port", async () => {
       await service.start();
 
       expect(mockNotificationPort.connect).toHaveBeenCalledOnce();
     });
 
-    it("non dovrebbe riavviare il polling se già avviato", async () => {
+    it("should not restart polling if already running", async () => {
       await service.start();
       await service.start();
 
@@ -67,7 +67,7 @@ describe("ThresholdMonitoringService", () => {
   });
 
   describe("stop", () => {
-    it("dovrebbe disconnettersi dal notification port", async () => {
+    it("should disconnect from notification port", async () => {
       await service.start();
       await service.stop();
 
@@ -75,8 +75,8 @@ describe("ThresholdMonitoringService", () => {
     });
   });
 
-  describe("polling e notifiche", () => {
-    it("dovrebbe notificare quando rileva soglie attive per la prima volta", async () => {
+  describe("polling and notifications", () => {
+    it("should notify when detecting active thresholds for the first time", async () => {
       const thresholds = [
         createMockThreshold("1", UtilityType.ELECTRICITY),
         createMockThreshold("2", UtilityType.WATER),
@@ -85,7 +85,6 @@ describe("ThresholdMonitoringService", () => {
       vi.mocked(mockRepository.findByFilters).mockResolvedValue(thresholds);
 
       await service.start();
-
       await new Promise((resolve) => setTimeout(resolve, 150));
 
       expect(mockRepository.findByFilters).toHaveBeenCalledWith(
@@ -99,13 +98,12 @@ describe("ThresholdMonitoringService", () => {
       );
     });
 
-    it("non dovrebbe notificare se le soglie non sono cambiate", async () => {
+    it("should not notify if thresholds have not changed", async () => {
       const thresholds = [createMockThreshold("1", UtilityType.ELECTRICITY)];
 
       vi.mocked(mockRepository.findByFilters).mockResolvedValue(thresholds);
 
       await service.start();
-
       await new Promise((resolve) => setTimeout(resolve, 250));
 
       expect(mockNotificationPort.notifyThresholdsChange).toHaveBeenCalledTimes(
@@ -113,7 +111,7 @@ describe("ThresholdMonitoringService", () => {
       );
     });
 
-    it("dovrebbe notificare quando le soglie cambiano", async () => {
+    it("should notify when thresholds change", async () => {
       const thresholds1 = [createMockThreshold("1", UtilityType.ELECTRICITY)];
       const thresholds2 = [
         createMockThreshold("1", UtilityType.ELECTRICITY),
@@ -125,7 +123,6 @@ describe("ThresholdMonitoringService", () => {
         .mockResolvedValueOnce(thresholds2);
 
       await service.start();
-
       await new Promise((resolve) => setTimeout(resolve, 250));
 
       expect(mockNotificationPort.notifyThresholdsChange).toHaveBeenCalledTimes(
@@ -139,7 +136,7 @@ describe("ThresholdMonitoringService", () => {
       ).toHaveBeenNthCalledWith(2, thresholds2);
     });
 
-    it("dovrebbe gestire errori durante il polling senza bloccare il servizio", async () => {
+    it("should handle polling errors without stopping the service", async () => {
       const consoleErrorSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => undefined);
@@ -151,11 +148,9 @@ describe("ThresholdMonitoringService", () => {
         ]);
 
       await service.start();
-
       await new Promise((resolve) => setTimeout(resolve, 250));
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(Error));
-
       expect(mockNotificationPort.notifyThresholdsChange).toHaveBeenCalledTimes(
         1,
       );
