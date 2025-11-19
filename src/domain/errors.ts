@@ -1,39 +1,39 @@
 import { ThresholdType } from "@domain/value/ThresholdType";
 
 export class BaseDomainError extends Error {
-  constructor(baseMessage: string, reason?: string) {
-    super(reason ? `${baseMessage}: ${reason}` : baseMessage);
-    this.name = new.target.name;
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
   }
 }
 
 export class InvalidThresholdValueError extends BaseDomainError {
-  constructor(value: number, reason?: string) {
-    super(`Invalid threshold value ${value}`, reason);
+  constructor(value: number, reason: string) {
+    super(`Invalid threshold value ${value}: ${reason}`);
   }
 }
 
 export class ThresholdNotFoundError extends BaseDomainError {
-  constructor(id: string, reason?: string) {
-    super(`Threshold not found with id: ${id}`, reason);
+  constructor(id: string) {
+    super(`Threshold not found with id: ${id}`);
   }
 }
 
 export class ThresholdAlreadyExistsError extends BaseDomainError {
-  constructor(uniqueKey: string, reason?: string) {
-    super(`Threshold already exists for key: ${uniqueKey}`, reason);
+  constructor(uniqueKey: string) {
+    super(`Threshold already exists for key: ${uniqueKey}`);
   }
 }
 
 export class InvalidQueryParametersError extends BaseDomainError {
-  constructor(message: string, reason?: string) {
-    super(`Invalid query parameters: ${message}`, reason);
+  constructor(message: string) {
+    super(`Invalid query parameters: ${message}`);
   }
 }
 
 export class InvalidThresholdIdError extends BaseDomainError {
-  constructor(id: string, reason?: string) {
-    super(`Invalid threshold ID format: ${id}`, reason);
+  constructor(id: string, reason: string) {
+    super(`Invalid threshold ID format: ${id}: ${reason}`);
   }
 }
 
@@ -50,19 +50,19 @@ export class MissingPeriodTypeForThresholdError extends BaseDomainError {
 }
 
 export class InvalidTokenError extends BaseDomainError {
-  constructor(reason?: string) {
-    super("Access token is required", reason);
+  constructor() {
+    super("Access token is required");
   }
 }
 
 export class UnauthorizedError extends BaseDomainError {
-  constructor(message: string, reason?: string) {
-    super(`Unauthorized: ${message}`, reason);
+  constructor(message: string) {
+    super(`Unauthorized: ${message}`);
   }
 }
 
 export class ForbiddenError extends BaseDomainError {
-  constructor(message: string, reason?: string) {
-    super(`Forbidden: ${message}`, reason);
+  constructor(message: string) {
+    super(`Forbidden: ${message}`);
   }
 }
