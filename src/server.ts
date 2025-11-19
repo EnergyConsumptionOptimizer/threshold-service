@@ -51,7 +51,7 @@ async function start() {
   try {
     await connectDatabase();
 
-    const server = app.listen(PORT, () => {
+    app.listen(PORT, () => {
       console.log(`Server listening on port ${PORT}`);
     });
 
@@ -59,23 +59,7 @@ async function start() {
     console.log("Reset scheduler started");
 
     await startMonitoring();
-    const consumptionListener = await startConsumptionListener();
-
-    const shutdown = async (signal: string) => {
-      console.log(`\n${signal} received, shutting down...`);
-
-      await consumptionListener?.disconnect();
-      await thresholdMonitoringService.stop();
-      thresholdResetScheduler.stop();
-
-      server.close(() => console.log("Server closed"));
-      await mongoose.disconnect();
-
-      process.exit(0);
-    };
-
-    process.on("SIGINT", () => shutdown("SIGINT"));
-    process.on("SIGTERM", () => shutdown("SIGTERM"));
+    await startConsumptionListener();
   } catch (error) {
     console.error("Failed to start:", error);
     process.exit(1);
