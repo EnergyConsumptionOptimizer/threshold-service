@@ -1,5 +1,11 @@
-function greet(name: string): string {
-  return `Hello, ${name}!`;
-}
+import express from "express";
+import { errorsHandler } from "@interfaces/web-api/middlewares/ErrorsMiddleware";
+import { apiRouter } from "@interfaces/web-api/dependencies";
 
-console.log(greet("World"));
+const app = express();
+
+app.use(express.json());
+app.use(apiRouter);
+app.use(errorsHandler);
+
+export default app;
