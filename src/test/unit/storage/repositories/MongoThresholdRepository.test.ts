@@ -46,7 +46,7 @@ describe("MongoThresholdRepository", () => {
     expect(saved.utilityType).toBe(t.utilityType);
     expect(saved.periodType).toBe(t.periodType);
     expect(saved.thresholdType).toBe(t.thresholdType);
-    expect(saved.value.toPrimitive()).toBe(t.value.toPrimitive());
+    expect(saved.value.valueOf()).toBe(t.value.valueOf());
   });
 
   it("retrieves a threshold by id", async () => {
@@ -74,7 +74,7 @@ describe("MongoThresholdRepository", () => {
     const updated = await repo.update(saved.id, {
       value: ThresholdValue.of(20),
     });
-    expect(updated?.value.toPrimitive()).toBe(20);
+    expect(updated?.value.valueOf()).toBe(20);
   });
 
   it("deletes a threshold", async () => {
