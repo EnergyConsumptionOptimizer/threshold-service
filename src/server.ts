@@ -7,7 +7,7 @@ import {
   createConsumptionEventListener,
 } from "@interfaces/web-api/dependencies";
 
-const PORT = parseInt(process.env.PORT || "3000", 10);
+const PORT = parseInt(process.env.PORT || "3000");
 const MONGO_URI =
   process.env.MONGO_URI ||
   `mongodb://${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGO_DB}`;
