@@ -13,9 +13,6 @@ const MONGO_URI =
   `mongodb://${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGO_DB}`;
 
 async function connectDatabase() {
-  if (process.env.SKIP_DB_CONNECTION === "true") {
-    return;
-  }
   await mongoose.connect(MONGO_URI);
   console.log("Database connected");
 }
