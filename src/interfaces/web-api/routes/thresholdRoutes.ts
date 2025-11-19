@@ -8,23 +8,17 @@ export function ThresholdRouter(
 ) {
   const router = Router();
 
-  router.post(
-    "/",
-    authMiddleware.authenticateAdmin,
-    thresholdController.create,
-  );
-  router.get("/", authMiddleware.authenticate, thresholdController.list);
-  router.get("/:id", authMiddleware.authenticate, thresholdController.findById);
-  router.put(
-    "/:id",
-    authMiddleware.authenticateAdmin,
-    thresholdController.update,
-  );
-  router.delete(
-    "/:id",
-    authMiddleware.authenticateAdmin,
-    thresholdController.delete,
-  );
+  router
+    .route("/")
+    .post(authMiddleware.authenticateAdmin, thresholdController.create)
+    .get(authMiddleware.authenticate, thresholdController.list);
+
+  router
+    .route("/:id")
+    .get(authMiddleware.authenticate, thresholdController.findById)
+    .put(authMiddleware.authenticateAdmin, thresholdController.update)
+    .delete(authMiddleware.authenticateAdmin, thresholdController.delete);
+
   router.post(
     "/evaluations/forecast",
     authMiddleware.authenticateAdmin,
