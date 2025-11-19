@@ -49,7 +49,6 @@ tasks.register<NpmTask>("npmTest") {
     description = "Run TypeScript tests"
     dependsOn("npmCi")
     args.set(listOf("run", "test"))
-    ignoreExitValue.set(true)
 }
 
 tasks.register<NpmTask>("npmCheckFormat") {
