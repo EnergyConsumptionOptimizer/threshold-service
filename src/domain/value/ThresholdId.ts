@@ -14,6 +14,10 @@ export class ThresholdId {
     return new ThresholdId(normalized);
   }
 
+  valueOf(): string {
+    return this.value;
+  }
+
   toString(): string {
     return this.value;
   }

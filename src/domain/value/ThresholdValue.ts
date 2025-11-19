@@ -25,7 +25,7 @@ export class ThresholdValue {
     return this.limit.toString();
   }
 
-  toPrimitive(): number {
+  valueOf(): number {
     return this.limit;
   }
 }
