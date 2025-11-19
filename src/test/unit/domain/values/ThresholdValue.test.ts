@@ -7,8 +7,8 @@ describe("ThresholdValue", () => {
     const value = ThresholdValue.of(100);
     const small = ThresholdValue.of(0.001);
 
-    expect(value.toPrimitive()).toBe(100);
-    expect(small.toPrimitive()).toBe(0.001);
+    expect(value.valueOf()).toBe(100);
+    expect(small.valueOf()).toBe(0.001);
   });
 
   it("should reject zero and negative values", () => {
@@ -37,6 +37,6 @@ describe("ThresholdValue", () => {
     const value = ThresholdValue.of(100);
 
     expect(value.toString()).toBe("100");
-    expect(value.toPrimitive()).toBe(100);
+    expect(value.valueOf()).toBe(100);
   });
 });
