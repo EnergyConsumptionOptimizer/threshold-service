@@ -112,14 +112,19 @@ export class ThresholdController {
     try {
       const parsed = evaluateThresholdSchema.parse(req.body);
 
-      const breached = await this.evaluationService.evaluateConsumption({
-        utilityType: parsed.utilityType,
-        thresholdType: ThresholdType.FORECAST,
-        periodType: parsed.periodType,
-        value: parsed.value,
-      });
+      const resultsPerAggregation = await Promise.all(
+        parsed.aggregations.map((a) =>
+          this.evaluationService.evaluateConsumption({
+            utilityType: parsed.utilityType,
+            thresholdType: ThresholdType.FORECAST,
+            periodType: a.periodType,
+            value: a.value,
+          }),
+        ),
+      );
+      const flattened = resultsPerAggregation.flat();
 
-      res.status(201).json(toThresholdDTOs(breached));
+      res.status(201).json(toThresholdDTOs(flattened));
     } catch (error) {
       next(error);
     }

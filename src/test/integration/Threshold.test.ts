@@ -483,4 +483,114 @@ describe("Threshold API Integration Tests", () => {
         .expect(204);
     });
   });
+
+  describe("POST /api/thresholds/evaluations/forecast", () => {
+    beforeEach(async () => {
+      mockAdminAuthSuccess();
+      await request(app)
+        .post("/api/thresholds")
+        .set("Authorization", authToken)
+        .send(thresholdFactory.validForecast());
+      await request(app)
+        .post("/api/thresholds")
+        .set("Authorization", authToken)
+        .send({
+          utilityType: "ELECTRICITY",
+          thresholdType: "FORECAST",
+          periodType: "ONE_MONTH",
+          value: 500,
+          thresholdState: "ENABLED",
+        });
+    });
+
+    const postEval = (payload: object) =>
+      request(app)
+        .post("/api/thresholds/evaluations/forecast")
+        .set("Authorization", authToken)
+        .send(payload);
+
+    it("should return exceeded thresholds", async () => {
+      mockAdminAuthSuccess();
+      const res = await postEval({
+        utilityType: "ELECTRICITY",
+        aggregations: [{ periodType: "ONE_MONTH", value: 600 }],
+      }).expect(201);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0]).toMatchObject({
+        utilityType: "ELECTRICITY",
+        periodType: "ONE_MONTH",
+        thresholdType: "FORECAST",
+      });
+    });
+
+    it("should handle multiple aggregations", async () => {
+      mockAdminAuthSuccess();
+      const res = await postEval({
+        utilityType: "ELECTRICITY",
+        aggregations: [
+          { periodType: "ONE_WEEK", value: 150 },
+          { periodType: "ONE_MONTH", value: 600 },
+        ],
+      }).expect(201);
+      expect(res.body).toHaveLength(1);
+    });
+
+    it("should return empty when no thresholds exceeded", async () => {
+      mockAdminAuthSuccess();
+      const res = await postEval({
+        utilityType: "ELECTRICITY",
+        aggregations: [{ periodType: "ONE_WEEK", value: 50 }],
+      }).expect(201);
+      expect(res.body).toHaveLength(0);
+    });
+
+    it("should return 401 without auth", async () => {
+      await request(app)
+        .post("/api/thresholds/evaluations/forecast")
+        .send({ utilityType: "ELECTRICITY", aggregations: [] })
+        .expect(401);
+    });
+
+    it("should return 403 when not admin", async () => {
+      mockAdminAuthFailure();
+      await postEval({
+        utilityType: "ELECTRICITY",
+        aggregations: [{ periodType: "ONE_WEEK", value: 150 }],
+      }).expect(403);
+    });
+
+    it.each<{ payload: object; desc: string }>([
+      { payload: {}, desc: "missing fields" },
+      { payload: { utilityType: "ELECTRICITY" }, desc: "missing aggregations" },
+      {
+        payload: { utilityType: "ELECTRICITY", aggregations: [] },
+        desc: "empty aggregations",
+      },
+      {
+        payload: {
+          utilityType: "INVALID",
+          aggregations: [{ periodType: "ONE_WEEK", value: 100 }],
+        },
+        desc: "invalid utilityType",
+      },
+      {
+        payload: {
+          utilityType: "ELECTRICITY",
+          aggregations: [{ periodType: "INVALID", value: 100 }],
+        },
+        desc: "invalid periodType",
+      },
+      {
+        payload: {
+          utilityType: "ELECTRICITY",
+          aggregations: [{ periodType: "ONE_WEEK", value: -1 }],
+        },
+        desc: "negative value",
+      },
+    ])("should return 400 for $desc", async ({ payload }) => {
+      mockAdminAuthSuccess();
+      const res = await postEval(payload).expect(400);
+      expect(res.body.error).toBe("ValidationError");
+    });
+  });
 });

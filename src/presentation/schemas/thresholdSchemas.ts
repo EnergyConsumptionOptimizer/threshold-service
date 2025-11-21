@@ -12,6 +12,10 @@ const thresholdBaseSchema = z.object({
   periodType: z.enum(PeriodType),
 });
 
+export const PeriodAggregationSchema = thresholdBaseSchema
+  .pick({ periodType: true, value: true })
+  .extend({ value: z.number().positive() });
+
 export const createThresholdSchema = thresholdBaseSchema
   .omit({ thresholdState: true, periodType: true })
   .extend({
@@ -30,5 +34,5 @@ export const listThresholdSchema = thresholdBaseSchema
   .partial();
 
 export const evaluateThresholdSchema = thresholdBaseSchema
-  .pick({ utilityType: true, periodType: true })
-  .extend({ value: z.number() });
+  .pick({ utilityType: true })
+  .extend({ aggregations: z.array(PeriodAggregationSchema).nonempty() });
