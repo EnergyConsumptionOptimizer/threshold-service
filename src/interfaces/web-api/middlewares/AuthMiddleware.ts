@@ -2,27 +2,42 @@ import { type NextFunction, type Request, type Response } from "express";
 import axios from "axios";
 import { InvalidTokenError } from "@domain/errors";
 
-export class AuthMiddleware {
-  private checkToken(request: Request): string {
-    const authHeader = request.headers.authorization;
+export interface AuthenticatedRequest extends Request {
+  user?: {
+    _id: string;
+    role: string;
+  };
+}
 
-    if (!authHeader?.startsWith("Bearer ")) {
+export class AuthMiddleware {
+  private getAccessTokenFromCookies(request: Request): string {
+    const token = request.cookies?.["accessToken"];
+    if (!token) {
       throw new InvalidTokenError();
     }
-
-    return authHeader;
+    return token;
   }
 
   private async verifyToken(
     endpoint: string,
-    request: Request,
+    request: AuthenticatedRequest,
     next: NextFunction,
   ) {
     try {
-      const token = this.checkToken(request);
-      await axios.get(`${process.env.USER_SERVICE_URI}${endpoint}`, {
-        headers: { Authorization: token },
-      });
+      const token = this.getAccessTokenFromCookies(request);
+      const response = await axios.get(
+        `${process.env.USER_SERVICE_URI}${endpoint}`,
+        {
+          headers: {
+            Cookie: `accessToken=${token}`,
+          },
+          withCredentials: true,
+        },
+      );
+      if (response.data) {
+        request.user = response.data;
+      }
+
       next();
     } catch (error) {
       next(error);
