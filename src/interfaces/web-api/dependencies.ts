@@ -12,9 +12,9 @@ import { HttpAlertServiceAdapter } from "@interfaces/HttpAlertServiceAdapter";
 import type { ThresholdBreachNotificationPort } from "@domain/port/ThresholdBreachNotificationPort";
 
 const ALERT_SERVICE_URL =
-  process.env.ALERT_SERVICE_URL || "http://localhost:3002";
+  process.env.ALERT_SERVICE_URL || "http://alert-service:3002";
 const MONITORING_SERVICE_URL =
-  process.env.MONITORING_SERVICE_URL || "http://localhost:3001";
+  process.env.MONITORING_SERVICE_URL || "http://monitoring-service:3001";
 const MONITORING_INTERVAL_MS = 10000;
 
 const repository = new MongoThresholdRepository();
