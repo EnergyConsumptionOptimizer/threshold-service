@@ -4,9 +4,7 @@ import type { Threshold } from "@domain/Threshold";
 import { connectSocket } from "@interfaces/socket/SocketConnectionHelper";
 import { mapToThresholdEvents } from "@presentation/mappers/thresholdEventDTO";
 
-export class SocketIOThresholdNotificationAdapter
-  implements ThresholdNotificationPort
-{
+export class SocketIOThresholdNotificationAdapter implements ThresholdNotificationPort {
   private socket: Socket | null = null;
 
   constructor(private readonly monitoringServiceUrl: string) {}
