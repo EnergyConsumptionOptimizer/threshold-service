@@ -1,4 +1,4 @@
-import { Document, model, Schema } from "mongoose";
+import { Document, model, Schema, InferSchemaType } from "mongoose";
 import { UtilityType } from "@domain/value/UtilityType";
 import { PeriodType } from "@domain/value/PeriodType";
 import { ThresholdType } from "@domain/value/ThresholdType";
@@ -43,7 +43,6 @@ thresholdSchema.index(
   { unique: true },
 );
 
-export const ThresholdModel = model<ThresholdDocument>(
-  "Threshold",
-  thresholdSchema,
-);
+export type Threshold = InferSchemaType<typeof thresholdSchema>;
+
+export const ThresholdModel = model<Threshold>("Threshold", thresholdSchema);
