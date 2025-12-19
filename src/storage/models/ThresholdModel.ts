@@ -1,19 +1,8 @@
-import { Document, model, Schema, InferSchemaType } from "mongoose";
+import { model, Schema, InferSchemaType } from "mongoose";
 import { UtilityType } from "@domain/value/UtilityType";
 import { PeriodType } from "@domain/value/PeriodType";
 import { ThresholdType } from "@domain/value/ThresholdType";
 import { ThresholdState } from "@domain/value/ThresholdState";
-
-export interface ThresholdDocument extends Document {
-  readonly _id: string;
-  readonly utilityType: string;
-  readonly value: number;
-  readonly thresholdType: string;
-  readonly thresholdState: string;
-  readonly periodType?: string;
-  readonly createdAt: Date;
-  readonly updatedAt: Date;
-}
 
 const requiredEnum = (values: string[]) => ({
   type: String,
@@ -21,7 +10,7 @@ const requiredEnum = (values: string[]) => ({
   required: true,
 });
 
-const thresholdSchema = new Schema<ThresholdDocument>(
+const thresholdSchema = new Schema(
   {
     _id: { type: String, required: true },
     utilityType: requiredEnum(Object.values(UtilityType)),
