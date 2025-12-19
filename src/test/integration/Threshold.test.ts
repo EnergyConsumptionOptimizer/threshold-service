@@ -26,10 +26,15 @@ import { ThresholdDTO } from "@presentation/mappers/thresholdDTO";
 
 describe("Threshold API Integration Tests", () => {
   let app: Express;
-  const authToken = "Bearer valid-token";
+
+  // Update: Raw token value without "Bearer" prefix
+  const authToken = "valid-token-value";
+  // Update: Helper to format the cookie for Supertest
+  const authCookie = [`accessToken=${authToken}`];
 
   beforeAll(async () => {
     await setupTestDatabase();
+    // Ensure createTestApp uses cookieParser() middleware!
     app = createTestApp();
   });
 
@@ -52,7 +57,7 @@ describe("Threshold API Integration Tests", () => {
 
       const response = await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie) // CHANGED: Authorization -> Cookie
         .send(payload)
         .expect(201);
 
@@ -72,7 +77,7 @@ describe("Threshold API Integration Tests", () => {
 
       const response = await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(payload)
         .expect(201);
 
@@ -91,7 +96,7 @@ describe("Threshold API Integration Tests", () => {
 
       const response = await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(payload)
         .expect(201);
 
@@ -99,9 +104,9 @@ describe("Threshold API Integration Tests", () => {
       expect(response.body.periodType).toBe(payload.periodType);
     });
 
-    it("should return 401 when no auth token provided", async () => {
+    it("should return 401 when no auth cookie provided", async () => {
       const payload = thresholdFactory.validActual();
-
+      // No .set("Cookie") called here
       await request(app).post("/api/thresholds").send(payload).expect(401);
     });
 
@@ -111,7 +116,7 @@ describe("Threshold API Integration Tests", () => {
 
       await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(payload)
         .expect(403);
     });
@@ -122,7 +127,7 @@ describe("Threshold API Integration Tests", () => {
 
       const response = await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(payload)
         .expect(400);
 
@@ -135,7 +140,7 @@ describe("Threshold API Integration Tests", () => {
 
       await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(payload)
         .expect(400);
     });
@@ -146,7 +151,7 @@ describe("Threshold API Integration Tests", () => {
 
       await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(payload)
         .expect(400);
     });
@@ -157,7 +162,7 @@ describe("Threshold API Integration Tests", () => {
 
       const response = await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(payload)
         .expect(400);
 
@@ -170,19 +175,20 @@ describe("Threshold API Integration Tests", () => {
     beforeEach(async () => {
       mockAdminAuthSuccess();
 
+      // Seed data using cookies
       await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(thresholdFactory.validActual());
 
       await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(thresholdFactory.validHistorical());
 
       await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(thresholdFactory.validForecast());
     });
 
@@ -191,7 +197,7 @@ describe("Threshold API Integration Tests", () => {
 
       const response = await request(app)
         .get("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .expect(200);
 
       expect(response.body).toHaveLength(3);
@@ -205,7 +211,7 @@ describe("Threshold API Integration Tests", () => {
       const response = await request(app)
         .get("/api/thresholds")
         .query({ utilityType: "ELECTRICITY" })
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .expect(200);
 
       expect(response.body).toHaveLength(1);
@@ -218,7 +224,7 @@ describe("Threshold API Integration Tests", () => {
       const response = await request(app)
         .get("/api/thresholds")
         .query({ thresholdType: "HISTORICAL" })
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .expect(200);
 
       expect(response.body).toHaveLength(1);
@@ -231,7 +237,7 @@ describe("Threshold API Integration Tests", () => {
       const response = await request(app)
         .get("/api/thresholds")
         .query({ periodType: "ONE_WEEK" })
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .expect(200);
 
       expect(response.body).toHaveLength(1);
@@ -244,7 +250,7 @@ describe("Threshold API Integration Tests", () => {
       const response = await request(app)
         .get("/api/thresholds/")
         .query({ thresholdState: "ENABLED" })
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .expect(200);
 
       response.body.forEach((t: ThresholdDTO) => {
@@ -261,7 +267,7 @@ describe("Threshold API Integration Tests", () => {
           utilityType: "GAS",
           thresholdType: "HISTORICAL",
         })
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .expect(200);
 
       expect(response.body).toHaveLength(1);
@@ -279,7 +285,7 @@ describe("Threshold API Integration Tests", () => {
       const response = await request(app)
         .get("/api/thresholds")
         .query({ utilityType: "WATER", thresholdType: "ACTUAL" })
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .expect(200);
 
       expect(response.body).toHaveLength(0);
@@ -293,7 +299,7 @@ describe("Threshold API Integration Tests", () => {
       mockAdminAuthSuccess();
       const createResponse = await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(thresholdFactory.validActual());
 
       createdThresholdId = createResponse.body.id;
@@ -304,7 +310,7 @@ describe("Threshold API Integration Tests", () => {
 
       const response = await request(app)
         .get(`/api/thresholds/${createdThresholdId}`)
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .expect(200);
 
       expect(response.body.id).toBe(createdThresholdId);
@@ -316,7 +322,7 @@ describe("Threshold API Integration Tests", () => {
 
       const response = await request(app)
         .get("/api/thresholds/507f1f77bcf86cd799439011")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .expect(404);
 
       expect(response.body.error).toContain("not found");
@@ -336,7 +342,7 @@ describe("Threshold API Integration Tests", () => {
       mockAdminAuthSuccess();
       const createResponse = await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(thresholdFactory.validActual());
 
       createdThresholdId = createResponse.body.id;
@@ -348,7 +354,7 @@ describe("Threshold API Integration Tests", () => {
 
       const response = await request(app)
         .put(`/api/thresholds/${createdThresholdId}`)
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(updatePayload)
         .expect(200);
 
@@ -362,7 +368,7 @@ describe("Threshold API Integration Tests", () => {
 
       const response = await request(app)
         .put(`/api/thresholds/${createdThresholdId}`)
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(updatePayload)
         .expect(200);
 
@@ -379,7 +385,7 @@ describe("Threshold API Integration Tests", () => {
 
       const response = await request(app)
         .put(`/api/thresholds/${createdThresholdId}`)
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(updatePayload)
         .expect(200);
 
@@ -393,7 +399,7 @@ describe("Threshold API Integration Tests", () => {
 
       await request(app)
         .put("/api/thresholds/507f1f77bcf86cd799439011")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send({ value: 100 })
         .expect(404);
     });
@@ -403,7 +409,7 @@ describe("Threshold API Integration Tests", () => {
 
       await request(app)
         .put(`/api/thresholds/${createdThresholdId}`)
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send({ value: 100 })
         .expect(403);
     });
@@ -413,7 +419,7 @@ describe("Threshold API Integration Tests", () => {
 
       const response = await request(app)
         .put(`/api/thresholds/${createdThresholdId}`)
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send({})
         .expect(400);
 
@@ -425,7 +431,7 @@ describe("Threshold API Integration Tests", () => {
 
       await request(app)
         .put(`/api/thresholds/${createdThresholdId}`)
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send({ value: -50 })
         .expect(400);
     });
@@ -438,7 +444,7 @@ describe("Threshold API Integration Tests", () => {
       mockAdminAuthSuccess();
       const createResponse = await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(thresholdFactory.validActual());
 
       createdThresholdId = createResponse.body.id;
@@ -449,13 +455,13 @@ describe("Threshold API Integration Tests", () => {
 
       await request(app)
         .delete(`/api/thresholds/${createdThresholdId}`)
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .expect(204);
 
       mockAuthSuccess();
       await request(app)
         .get(`/api/thresholds/${createdThresholdId}`)
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .expect(404);
     });
 
@@ -464,7 +470,7 @@ describe("Threshold API Integration Tests", () => {
 
       await request(app)
         .delete(`/api/thresholds/${createdThresholdId}`)
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .expect(403);
     });
 
@@ -479,7 +485,7 @@ describe("Threshold API Integration Tests", () => {
 
       await request(app)
         .delete("/api/thresholds/507f1f77bcf86cd799439011")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .expect(204);
     });
   });
@@ -489,11 +495,11 @@ describe("Threshold API Integration Tests", () => {
       mockAdminAuthSuccess();
       await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(thresholdFactory.validForecast());
       await request(app)
         .post("/api/thresholds")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send({
           utilityType: "ELECTRICITY",
           thresholdType: "FORECAST",
@@ -506,7 +512,7 @@ describe("Threshold API Integration Tests", () => {
     const postEval = (payload: object) =>
       request(app)
         .post("/api/thresholds/evaluations/forecast")
-        .set("Authorization", authToken)
+        .set("Cookie", authCookie)
         .send(payload);
 
     it("should return exceeded thresholds", async () => {
