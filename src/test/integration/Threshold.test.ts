@@ -26,15 +26,11 @@ import { ThresholdDTO } from "@presentation/mappers/thresholdDTO";
 
 describe("Threshold API Integration Tests", () => {
   let app: Express;
-
-  // Update: Raw token value without "Bearer" prefix
   const authToken = "valid-token-value";
-  // Update: Helper to format the cookie for Supertest
-  const authCookie = [`accessToken=${authToken}`];
+  const authCookie = [`authToken=${authToken}`];
 
   beforeAll(async () => {
     await setupTestDatabase();
-    // Ensure createTestApp uses cookieParser() middleware!
     app = createTestApp();
   });
 
@@ -57,12 +53,13 @@ describe("Threshold API Integration Tests", () => {
 
       const response = await request(app)
         .post("/api/thresholds")
-        .set("Cookie", authCookie) // CHANGED: Authorization -> Cookie
+        .set("Cookie", authCookie)
         .send(payload)
         .expect(201);
 
       expect(response.body).toMatchObject({
         id: expect.any(String),
+        name: payload.name,
         utilityType: payload.utilityType,
         thresholdType: payload.thresholdType,
         value: payload.value,
@@ -106,7 +103,6 @@ describe("Threshold API Integration Tests", () => {
 
     it("should return 401 when no auth cookie provided", async () => {
       const payload = thresholdFactory.validActual();
-      // No .set("Cookie") called here
       await request(app).post("/api/thresholds").send(payload).expect(401);
     });
 
@@ -501,6 +497,7 @@ describe("Threshold API Integration Tests", () => {
         .post("/api/thresholds")
         .set("Cookie", authCookie)
         .send({
+          name: "t-500",
           utilityType: "ELECTRICITY",
           thresholdType: "FORECAST",
           periodType: "ONE_MONTH",

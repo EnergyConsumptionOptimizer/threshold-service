@@ -5,6 +5,7 @@ import { ThresholdState } from "@domain/value/ThresholdState";
 
 export const thresholdFactory = {
   validActual: (overrides = {}) => ({
+    name: "validActualThreshold",
     utilityType: UtilityType.ELECTRICITY,
     thresholdType: ThresholdType.ACTUAL,
     value: 100,
@@ -13,6 +14,7 @@ export const thresholdFactory = {
   }),
 
   validHistorical: (overrides = {}) => ({
+    name: "validHistoricalThreshold",
     utilityType: UtilityType.GAS,
     thresholdType: ThresholdType.HISTORICAL,
     periodType: PeriodType.ONE_MONTH,
@@ -22,6 +24,7 @@ export const thresholdFactory = {
   }),
 
   validForecast: (overrides = {}) => ({
+    name: "validForecastThreshold",
     utilityType: UtilityType.WATER,
     thresholdType: ThresholdType.FORECAST,
     periodType: PeriodType.ONE_WEEK,
@@ -32,6 +35,7 @@ export const thresholdFactory = {
 
   invalid: {
     negativeValue: () => ({
+      name: "negativeValueThreshold",
       utilityType: UtilityType.ELECTRICITY,
       thresholdType: ThresholdType.ACTUAL,
       value: -10,
@@ -39,6 +43,7 @@ export const thresholdFactory = {
     }),
 
     actualWithPeriod: () => ({
+      name: "actualWithPeriodThreshold",
       utilityType: UtilityType.ELECTRICITY,
       thresholdType: ThresholdType.ACTUAL,
       periodType: PeriodType.ONE_DAY,
@@ -47,6 +52,7 @@ export const thresholdFactory = {
     }),
 
     historicalWithoutPeriod: () => ({
+      name: "historicalWithoutPeriodThreshold",
       utilityType: UtilityType.GAS,
       thresholdType: ThresholdType.HISTORICAL,
       value: 200,
