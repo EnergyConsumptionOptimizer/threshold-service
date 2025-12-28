@@ -11,9 +11,11 @@ import {
   MissingPeriodTypeForThresholdError,
 } from "@domain/errors";
 import { ThresholdState } from "@domain/value/ThresholdState";
+import { ThresholdName } from "@domain/value/ThresholdName";
 
 describe("Threshold", () => {
   const validId = ThresholdId.of("valid-id");
+  const validName = ThresholdName.of("T1");
   const validUtilityType = UtilityType.ELECTRICITY;
   const validValue = ThresholdValue.of(100);
 
@@ -21,6 +23,7 @@ describe("Threshold", () => {
     it("should create a valid ACTUAL threshold without period", () => {
       const threshold = Threshold.create(
         validId,
+        validName,
         validUtilityType,
         validValue,
         ThresholdType.ACTUAL,
@@ -38,6 +41,7 @@ describe("Threshold", () => {
     it("should create a valid HISTORICAL threshold with period", () => {
       const threshold = Threshold.create(
         validId,
+        validName,
         validUtilityType,
         validValue,
         ThresholdType.HISTORICAL,
@@ -52,6 +56,7 @@ describe("Threshold", () => {
     it("should create a valid FORECAST threshold with period", () => {
       const threshold = Threshold.create(
         validId,
+        validName,
         validUtilityType,
         validValue,
         ThresholdType.FORECAST,
@@ -69,6 +74,7 @@ describe("Threshold", () => {
       expect(() =>
         Threshold.create(
           validId,
+          validName,
           validUtilityType,
           validValue,
           ThresholdType.ACTUAL,
@@ -82,6 +88,7 @@ describe("Threshold", () => {
       expect(() =>
         Threshold.create(
           validId,
+          validName,
           validUtilityType,
           validValue,
           ThresholdType.HISTORICAL,
@@ -94,6 +101,7 @@ describe("Threshold", () => {
       expect(() =>
         Threshold.create(
           validId,
+          validName,
           validUtilityType,
           validValue,
           ThresholdType.FORECAST,
@@ -107,6 +115,7 @@ describe("Threshold", () => {
     it("should update single attribute preserving others", () => {
       const original = Threshold.create(
         validId,
+        validName,
         validUtilityType,
         validValue,
         ThresholdType.ACTUAL,
@@ -125,6 +134,7 @@ describe("Threshold", () => {
     it("should update multiple attributes", () => {
       const original = Threshold.create(
         validId,
+        validName,
         validUtilityType,
         validValue,
         ThresholdType.HISTORICAL,
@@ -146,6 +156,7 @@ describe("Threshold", () => {
     it("should validate updated threshold", () => {
       const original = Threshold.create(
         validId,
+        validName,
         validUtilityType,
         validValue,
         ThresholdType.HISTORICAL,
@@ -163,6 +174,7 @@ describe("Threshold", () => {
     it("should return new instance on update", () => {
       const original = Threshold.create(
         validId,
+        validName,
         validUtilityType,
         validValue,
         ThresholdType.ACTUAL,
@@ -182,6 +194,7 @@ describe("Threshold", () => {
     it("should not breach when DISABLED", () => {
       const threshold = Threshold.create(
         validId,
+        validName,
         validUtilityType,
         validValue,
         ThresholdType.ACTUAL,
@@ -196,6 +209,7 @@ describe("Threshold", () => {
     it("should set state to BREACHED when value is exceeded", () => {
       const threshold = Threshold.create(
         validId,
+        validName,
         validUtilityType,
         validValue,
         ThresholdType.ACTUAL,
@@ -210,6 +224,7 @@ describe("Threshold", () => {
     it("should remain ENABLED if not breached", () => {
       const threshold = Threshold.create(
         validId,
+        validName,
         validUtilityType,
         ThresholdValue.of(300),
         ThresholdType.ACTUAL,
