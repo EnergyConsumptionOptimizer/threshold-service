@@ -486,7 +486,7 @@ describe("Threshold API Integration Tests", () => {
     });
   });
 
-  describe("POST /api/thresholds/evaluations/forecast", () => {
+  describe("POST /api/internal/thresholds/evaluations/forecast", () => {
     beforeEach(async () => {
       mockAdminAuthSuccess();
       await request(app)
@@ -508,8 +508,7 @@ describe("Threshold API Integration Tests", () => {
 
     const postEval = (payload: object) =>
       request(app)
-        .post("/api/thresholds/evaluations/forecast")
-        .set("Cookie", authCookie)
+        .post("/api/internal/thresholds/evaluations/forecast")
         .send(payload);
 
     it("should return exceeded thresholds", async () => {
@@ -545,21 +544,6 @@ describe("Threshold API Integration Tests", () => {
         aggregations: [{ periodType: "ONE_WEEK", value: 50 }],
       }).expect(201);
       expect(res.body).toHaveLength(0);
-    });
-
-    it("should return 401 without auth", async () => {
-      await request(app)
-        .post("/api/thresholds/evaluations/forecast")
-        .send({ utilityType: "ELECTRICITY", aggregations: [] })
-        .expect(401);
-    });
-
-    it("should return 403 when not admin", async () => {
-      mockAdminAuthFailure();
-      await postEval({
-        utilityType: "ELECTRICITY",
-        aggregations: [{ periodType: "ONE_WEEK", value: 150 }],
-      }).expect(403);
     });
 
     it.each<{ payload: object; desc: string }>([

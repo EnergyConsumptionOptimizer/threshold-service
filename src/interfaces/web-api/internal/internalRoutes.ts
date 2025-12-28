@@ -7,7 +7,10 @@ export function internalRoutes(
 ): Router {
   const router = Router();
 
-  router.post("/evaluations/forecast", thresholdController.evaluateForecast);
+  router.post(
+    "/thresholds/evaluations/forecast",
+    thresholdController.evaluateForecast,
+  );
 
   return router;
 }
