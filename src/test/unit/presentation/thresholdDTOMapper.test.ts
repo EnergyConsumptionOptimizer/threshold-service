@@ -10,10 +10,12 @@ import {
   toThresholdDTOs,
 } from "@presentation/mappers/thresholdDTO";
 import { ThresholdState } from "@domain/value/ThresholdState";
+import { ThresholdName } from "@domain/value/ThresholdName";
 
 describe("Threshold HTTP DTO Mapper", () => {
   const mockThreshold = Threshold.create(
     ThresholdId.of("123"),
+    ThresholdName.of("T123"),
     UtilityType.GAS,
     ThresholdValue.of(10),
     ThresholdType.FORECAST,
@@ -25,6 +27,7 @@ describe("Threshold HTTP DTO Mapper", () => {
     const dto = toThresholdDTO(mockThreshold);
     expect(dto).toEqual({
       id: "123",
+      name: "T123",
       utilityType: "GAS",
       thresholdType: "FORECAST",
       periodType: "ONE_DAY",
