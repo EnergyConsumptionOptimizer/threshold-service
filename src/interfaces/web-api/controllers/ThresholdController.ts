@@ -17,6 +17,7 @@ import { ThresholdType } from "@domain/value/ThresholdType";
 import { ThresholdValue } from "@domain/value/ThresholdValue";
 import { ThresholdState } from "@domain/value/ThresholdState";
 import { ConsumptionEvaluationService } from "@application/services/ConsumptionEvaluationService";
+import { ThresholdName } from "@domain/value/ThresholdName";
 
 export class ThresholdController {
   constructor(
@@ -30,6 +31,7 @@ export class ThresholdController {
 
       const threshold = Threshold.create(
         ThresholdId.of("id-placeholder"),
+        ThresholdName.of(parsed.name),
         parsed.utilityType,
         ThresholdValue.of(parsed.value),
         parsed.thresholdType,
@@ -51,12 +53,13 @@ export class ThresholdController {
   ): Promise<void> => {
     try {
       const parsed = listThresholdSchema.parse(req.query);
-      const thresholds = await this.repository.findByFilters(
-        parsed.utilityType,
-        parsed.periodType,
-        parsed.thresholdType,
-        parsed.thresholdState,
-      );
+      const thresholds = await this.repository.findByFilters({
+        name: parsed.name,
+        utilityType: parsed.utilityType,
+        periodType: parsed.periodType,
+        thresholdType: parsed.thresholdType,
+        state: parsed.thresholdState,
+      });
       res.status(200).json(toThresholdDTOs(thresholds));
     } catch (error) {
       next(error);

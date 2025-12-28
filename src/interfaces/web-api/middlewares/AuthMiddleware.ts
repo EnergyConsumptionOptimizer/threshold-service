@@ -10,8 +10,12 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export class AuthMiddleware {
-  private getAccessTokenFromCookies(request: Request): string {
-    const token = request.cookies?.["accessToken"];
+  private readonly USER_SERVICE_URI =
+    process.env.USER_SERVICE_URI ||
+    `http://${process.env.USER_SERVICE_HOST || "user"}:${process.env.USER_SERVICE_PORT || 3000}`;
+
+  private getAuthTokenFromCookies(request: Request): string {
+    const token = request.cookies?.["authToken"];
     if (!token) {
       throw new InvalidTokenError();
     }
@@ -24,16 +28,13 @@ export class AuthMiddleware {
     next: NextFunction,
   ) {
     try {
-      const token = this.getAccessTokenFromCookies(request);
-      const response = await axios.get(
-        `${process.env.USER_SERVICE_URI}${endpoint}`,
-        {
-          headers: {
-            Cookie: `accessToken=${token}`,
-          },
-          withCredentials: true,
+      const token = this.getAuthTokenFromCookies(request);
+      const response = await axios.get(this.USER_SERVICE_URI + `${endpoint}`, {
+        headers: {
+          Cookie: `authToken=${token}`,
         },
-      );
+        withCredentials: true,
+      });
       if (response.data) {
         request.user = response.data;
       }
@@ -49,7 +50,7 @@ export class AuthMiddleware {
     _res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    await this.verifyToken("/auth/verify", request, next);
+    await this.verifyToken("/api/internal/auth/verify", request, next);
   };
 
   authenticateAdmin = async (
@@ -57,6 +58,6 @@ export class AuthMiddleware {
     _res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    await this.verifyToken("/auth/verify-admin", request, next);
+    await this.verifyToken("/api/internal/auth/verify-admin", request, next);
   };
 }
