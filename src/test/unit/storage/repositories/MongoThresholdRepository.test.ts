@@ -32,6 +32,7 @@ describe("MongoThresholdRepository", () => {
   const makeThreshold = (overrides: Partial<Threshold> = {}): Threshold =>
     ({
       id: ThresholdId.of(overrides.id?.value || crypto.randomUUID()),
+      name: overrides.name || "T1",
       utilityType: overrides.utilityType || UtilityType.GAS,
       thresholdType: overrides.thresholdType || ThresholdType.FORECAST,
       value: overrides.value || ThresholdValue.of(10),
@@ -63,7 +64,7 @@ describe("MongoThresholdRepository", () => {
     await repo.save(t1);
     await repo.save(t2);
 
-    const results = await repo.findByFilters(UtilityType.GAS);
+    const results = await repo.findByFilters({ utilityType: UtilityType.GAS });
     expect(results).toHaveLength(1);
   });
 
