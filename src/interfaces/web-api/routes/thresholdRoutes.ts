@@ -20,11 +20,5 @@ export function ThresholdRouter(
     .put(authMiddleware.authenticateAdmin, thresholdController.update)
     .delete(authMiddleware.authenticateAdmin, thresholdController.delete);
 
-  router.post(
-    "/evaluations/forecast",
-    authMiddleware.authenticateAdmin,
-    thresholdController.evaluateForecast,
-  );
-
   return router;
 }
