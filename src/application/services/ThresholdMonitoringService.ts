@@ -33,12 +33,9 @@ export class ThresholdMonitoringService {
 
   private async checkAndNotifyChanges(): Promise<void> {
     try {
-      const currentThresholds = await this.repository.findByFilters(
-        undefined,
-        undefined,
-        undefined,
-        ThresholdState.ENABLED,
-      );
+      const currentThresholds = await this.repository.findByFilters({
+        state: ThresholdState.ENABLED,
+      });
 
       if (this.hasChanged(currentThresholds)) {
         await this.notificationPort.notifyThresholdsChange(currentThresholds);

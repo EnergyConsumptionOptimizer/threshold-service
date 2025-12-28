@@ -51,11 +51,11 @@ export class ConsumptionEvaluationService {
         ? undefined
         : consumption.periodType;
 
-    const thresholds = await this.repository.findByFilters(
-      consumption.utilityType,
-      periodType,
-      consumption.thresholdType,
-    );
+    const thresholds = await this.repository.findByFilters({
+      utilityType: consumption.utilityType,
+      periodType: periodType,
+      thresholdType: consumption.thresholdType,
+    });
 
     return thresholds.filter(
       (t) => t.thresholdState === ThresholdState.ENABLED,
