@@ -8,10 +8,12 @@ import {
   MissingPeriodTypeForThresholdError,
 } from "@domain/errors";
 import { ThresholdState } from "@domain/value/ThresholdState";
+import { ThresholdName } from "@domain/value/ThresholdName";
 
 export class Threshold {
   private constructor(
     public readonly id: ThresholdId,
+    public readonly name: ThresholdName,
     public readonly utilityType: UtilityType,
     public readonly value: ThresholdValue,
     public readonly thresholdType: ThresholdType,
@@ -36,18 +38,20 @@ export class Threshold {
 
   static create(
     id: ThresholdId,
+    name: ThresholdName,
     utilityType: UtilityType,
     value: ThresholdValue,
     type: ThresholdType,
     state = ThresholdState.ENABLED,
     periodType?: PeriodType,
   ): Threshold {
-    return new Threshold(id, utilityType, value, type, state, periodType);
+    return new Threshold(id, name, utilityType, value, type, state, periodType);
   }
 
   update(attrs: Partial<Threshold>): Threshold {
     return Threshold.create(
       this.id,
+      attrs.name ?? this.name,
       attrs.utilityType ?? this.utilityType,
       attrs.value ?? this.value,
       attrs.thresholdType ?? this.thresholdType,

@@ -13,6 +13,12 @@ export class InvalidThresholdValueError extends BaseDomainError {
   }
 }
 
+export class InvalidThresholdNameError extends BaseDomainError {
+  constructor(name: string, reason: string) {
+    super(`Invalid threshold name ${name}: ${reason}`);
+  }
+}
+
 export class ThresholdNotFoundError extends BaseDomainError {
   constructor(id: string) {
     super(`Threshold not found with id: ${id}`);
@@ -21,7 +27,7 @@ export class ThresholdNotFoundError extends BaseDomainError {
 
 export class ThresholdAlreadyExistsError extends BaseDomainError {
   constructor(uniqueKey: string) {
-    super(`Threshold already exists for key: ${uniqueKey}`);
+    super(`Threshold already exists with name: ${uniqueKey}`);
   }
 }
 
