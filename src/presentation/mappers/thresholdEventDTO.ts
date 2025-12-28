@@ -2,6 +2,7 @@ import type { Threshold } from "@domain/Threshold";
 
 export interface ThresholdEventDTO {
   id: string;
+  name: string;
   utilityType: string;
   thresholdType: string;
   thresholdState: string;
@@ -12,6 +13,7 @@ export interface ThresholdEventDTO {
 export function toThresholdEventDTO(threshold: Threshold): ThresholdEventDTO {
   return {
     id: threshold.id.value,
+    name: threshold.name.toString(),
     utilityType: threshold.utilityType,
     thresholdType: threshold.thresholdType,
     thresholdState: threshold.thresholdState,
