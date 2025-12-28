@@ -4,18 +4,22 @@ import { UtilityType } from "../value/UtilityType";
 import { PeriodType } from "../value/PeriodType";
 import { ThresholdType } from "../value/ThresholdType";
 import { ThresholdState } from "@domain/value/ThresholdState";
+import { ThresholdName } from "@domain/value/ThresholdName";
+
+export interface ThresholdFilters {
+  name?: ThresholdName;
+  utilityType?: UtilityType;
+  periodType?: PeriodType;
+  thresholdType?: ThresholdType;
+  state?: ThresholdState;
+}
 
 export interface ThresholdRepositoryPort {
   findById(thresholdId: ThresholdId): Promise<Threshold | null>;
 
   findAll(): Promise<Threshold[]>;
 
-  findByFilters(
-    utilityType?: UtilityType,
-    periodType?: PeriodType,
-    thresholdType?: ThresholdType,
-    state?: ThresholdState,
-  ): Promise<Threshold[]>;
+  findByFilters(filters: ThresholdFilters): Promise<Threshold[]>;
 
   save(threshold: Threshold): Promise<Threshold>;
 
