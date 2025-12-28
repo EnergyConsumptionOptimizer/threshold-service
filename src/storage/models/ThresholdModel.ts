@@ -13,6 +13,7 @@ const requiredEnum = (values: string[]) => ({
 const thresholdSchema = new Schema(
   {
     _id: { type: String, required: true },
+    name: { type: String, required: true },
     utilityType: requiredEnum(Object.values(UtilityType)),
     value: { type: Number, required: true, min: 0 },
     thresholdType: requiredEnum(Object.values(ThresholdType)),
@@ -27,10 +28,7 @@ const thresholdSchema = new Schema(
   },
 );
 
-thresholdSchema.index(
-  { utilityType: 1, periodType: 1, thresholdType: 1 },
-  { unique: true },
-);
+thresholdSchema.index({ name: 1 }, { unique: true });
 
 export type Threshold = InferSchemaType<typeof thresholdSchema>;
 

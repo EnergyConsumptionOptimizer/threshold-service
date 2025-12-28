@@ -5,9 +5,11 @@ import { UtilityType } from "@domain/value/UtilityType";
 import { ThresholdType } from "@domain/value/ThresholdType";
 import { PeriodType } from "@domain/value/PeriodType";
 import { ThresholdState } from "@domain/value/ThresholdState";
+import { ThresholdName } from "@domain/value/ThresholdName";
 
 export interface ThresholdDoc {
   _id: string;
+  name: string;
   utilityType: string;
   thresholdType: string;
   periodType?: string;
@@ -17,6 +19,7 @@ export interface ThresholdDoc {
 
 export function toPersistence(threshold: Threshold) {
   return {
+    name: threshold.name.toString(),
     utilityType: threshold.utilityType,
     thresholdType: threshold.thresholdType,
     periodType: threshold.periodType,
@@ -28,6 +31,7 @@ export function toPersistence(threshold: Threshold) {
 export function toDomain(doc: ThresholdDoc): Threshold {
   return Threshold.create(
     ThresholdId.of(doc._id),
+    ThresholdName.of(doc.name),
     doc.utilityType as UtilityType,
     ThresholdValue.of(doc.value),
     doc.thresholdType as ThresholdType,

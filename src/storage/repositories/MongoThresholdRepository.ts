@@ -1,17 +1,16 @@
-import { ThresholdModel } from "../models/ThresholdModel";
-import { ThresholdRepositoryPort } from "@domain/port/ThresholdRepositoryPort";
-import { ThresholdId } from "@domain/value/ThresholdId";
-import { Threshold } from "@domain/Threshold";
-import { UtilityType } from "@domain/value/UtilityType";
-import { PeriodType } from "@domain/value/PeriodType";
-import { ThresholdType } from "@domain/value/ThresholdType";
-import { ThresholdState } from "@domain/value/ThresholdState";
-import { v4 as uuidv4 } from "uuid";
 import { MongoError } from "mongodb";
+import { v4 as uuidv4 } from "uuid";
+import {
+  ThresholdFilters,
+  ThresholdRepositoryPort,
+} from "@domain/port/ThresholdRepositoryPort";
+import { Threshold } from "@domain/Threshold";
+import { ThresholdId } from "@domain/value/ThresholdId";
 import {
   ThresholdAlreadyExistsError,
   ThresholdNotFoundError,
 } from "@domain/errors";
+import { ThresholdModel } from "../models/ThresholdModel";
 import {
   type ThresholdDoc,
   toDomain,
@@ -24,6 +23,7 @@ export class MongoThresholdRepository implements ThresholdRepositoryPort {
       .sort({ createdAt: -1 })
       .lean<ThresholdDoc[]>()
       .exec();
+
     return docs.map(toDomain);
   }
 
@@ -31,25 +31,24 @@ export class MongoThresholdRepository implements ThresholdRepositoryPort {
     const doc = await ThresholdModel.findById(id.value)
       .lean<ThresholdDoc>()
       .exec();
+
     return doc ? toDomain(doc) : null;
   }
 
-  async findByFilters(
-    utilityType?: UtilityType,
-    periodType?: PeriodType,
-    thresholdType?: ThresholdType,
-    thresholdState?: ThresholdState,
-  ): Promise<Threshold[]> {
-    const filter: Record<string, string> = {};
-    if (utilityType) filter.utilityType = utilityType;
-    if (periodType) filter.periodType = periodType;
-    if (thresholdType) filter.thresholdType = thresholdType;
-    if (thresholdState) filter.thresholdState = thresholdState;
+  async findByFilters(filters: ThresholdFilters): Promise<Threshold[]> {
+    const mongoQuery = {
+      ...(filters.name && { name: filters.name.toString() }),
+      ...(filters.utilityType && { utilityType: filters.utilityType }),
+      ...(filters.periodType && { periodType: filters.periodType }),
+      ...(filters.thresholdType && { thresholdType: filters.thresholdType }),
+      ...(filters.state && { thresholdState: filters.state }),
+    };
 
-    const docs = await ThresholdModel.find(filter)
+    const docs = await ThresholdModel.find(mongoQuery)
       .sort({ createdAt: -1 })
       .lean<ThresholdDoc[]>()
       .exec();
+
     return docs.map(toDomain);
   }
 
@@ -59,12 +58,11 @@ export class MongoThresholdRepository implements ThresholdRepositoryPort {
         _id: uuidv4(),
         ...toPersistence(threshold),
       });
+
       return toDomain(doc.toObject() as ThresholdDoc);
     } catch (error) {
       if ((error as MongoError).code === 11000) {
-        throw new ThresholdAlreadyExistsError(
-          `${threshold.utilityType}-${threshold.thresholdType}-${threshold.periodType}`,
-        );
+        throw new ThresholdAlreadyExistsError(threshold.name.toString());
       }
       throw error;
     }
@@ -91,9 +89,7 @@ export class MongoThresholdRepository implements ThresholdRepositoryPort {
       return doc ? toDomain(doc) : null;
     } catch (error) {
       if ((error as MongoError).code === 11000) {
-        throw new ThresholdAlreadyExistsError(
-          `${updated.utilityType}-${updated.thresholdType}-${updated.periodType}`,
-        );
+        throw new ThresholdAlreadyExistsError(updated.name.toString());
       }
       throw error;
     }
