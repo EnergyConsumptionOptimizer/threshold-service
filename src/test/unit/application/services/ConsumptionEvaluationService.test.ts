@@ -11,6 +11,7 @@ import { ThresholdValue } from "@domain/value/ThresholdValue";
 import { ThresholdType } from "@domain/value/ThresholdType";
 import { ThresholdState } from "@domain/value/ThresholdState";
 import { PeriodType } from "@domain/value/PeriodType";
+import { ThresholdName } from "@domain/value/ThresholdName";
 
 describe("ConsumptionEvaluationService", () => {
   let mockRepository: ThresholdRepositoryPort;
@@ -18,11 +19,13 @@ describe("ConsumptionEvaluationService", () => {
 
   const createThreshold = (
     id: string,
+    name: string,
     value: number,
     state: ThresholdState,
   ): Threshold => {
     return Threshold.create(
       ThresholdId.of(id),
+      ThresholdName.of(name),
       UtilityType.ELECTRICITY,
       ThresholdValue.of(value),
       ThresholdType.ACTUAL,
@@ -47,16 +50,15 @@ describe("ConsumptionEvaluationService", () => {
         value: 150,
       };
 
-      const threshold = createThreshold("1", 100, ThresholdState.ENABLED);
+      const threshold = createThreshold("1", "T1", 100, ThresholdState.ENABLED);
       vi.mocked(mockRepository.findByFilters).mockResolvedValue([threshold]);
 
       const result = await service.evaluateConsumption(consumption);
 
-      expect(mockRepository.findByFilters).toHaveBeenCalledWith(
-        UtilityType.ELECTRICITY,
-        undefined,
-        ThresholdType.ACTUAL,
-      );
+      expect(mockRepository.findByFilters).toHaveBeenCalledWith({
+        utilityType: UtilityType.ELECTRICITY,
+        thresholdType: ThresholdType.ACTUAL,
+      });
       expect(result).toHaveLength(1);
       expect(result[0].thresholdState).toBe(ThresholdState.BREACHED);
     });
@@ -69,16 +71,16 @@ describe("ConsumptionEvaluationService", () => {
         value: 200,
       };
 
-      const threshold = createThreshold("2", 150, ThresholdState.ENABLED);
+      const threshold = createThreshold("2", "T2", 150, ThresholdState.ENABLED);
       vi.mocked(mockRepository.findByFilters).mockResolvedValue([threshold]);
 
       const result = await service.evaluateConsumption(consumption);
 
-      expect(mockRepository.findByFilters).toHaveBeenCalledWith(
-        UtilityType.WATER,
-        PeriodType.ONE_DAY,
-        ThresholdType.HISTORICAL,
-      );
+      expect(mockRepository.findByFilters).toHaveBeenCalledWith({
+        utilityType: UtilityType.WATER,
+        periodType: PeriodType.ONE_DAY,
+        thresholdType: ThresholdType.HISTORICAL,
+      });
       expect(result).toHaveLength(1);
       expect(result[0].thresholdState).toBe(ThresholdState.BREACHED);
     });
@@ -91,7 +93,7 @@ describe("ConsumptionEvaluationService", () => {
         value: 50,
       };
 
-      const threshold = createThreshold("3", 150, ThresholdState.ENABLED);
+      const threshold = createThreshold("3", "T3", 150, ThresholdState.ENABLED);
       vi.mocked(mockRepository.findByFilters).mockResolvedValue([threshold]);
 
       const result = await service.evaluateConsumption(consumption);
@@ -116,8 +118,18 @@ describe("ConsumptionEvaluationService", () => {
         },
       ];
 
-      const threshold1 = createThreshold("1", 100, ThresholdState.ENABLED);
-      const threshold2 = createThreshold("2", 150, ThresholdState.ENABLED);
+      const threshold1 = createThreshold(
+        "1",
+        "T1",
+        100,
+        ThresholdState.ENABLED,
+      );
+      const threshold2 = createThreshold(
+        "2",
+        "T2",
+        150,
+        ThresholdState.ENABLED,
+      );
 
       vi.mocked(mockRepository.findByFilters)
         .mockResolvedValueOnce([threshold1])

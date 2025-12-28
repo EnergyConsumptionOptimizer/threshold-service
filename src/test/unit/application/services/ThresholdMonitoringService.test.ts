@@ -8,6 +8,7 @@ import { UtilityType } from "@domain/value/UtilityType";
 import { ThresholdValue } from "@domain/value/ThresholdValue";
 import { ThresholdType } from "@domain/value/ThresholdType";
 import { ThresholdState } from "@domain/value/ThresholdState";
+import { ThresholdName } from "@domain/value/ThresholdName";
 
 describe("ThresholdMonitoringService", () => {
   let mockRepository: ThresholdRepositoryPort;
@@ -16,10 +17,12 @@ describe("ThresholdMonitoringService", () => {
 
   const createMockThreshold = (
     id: string,
+    name: string,
     utilityType: UtilityType,
   ): Threshold => {
     return Threshold.create(
       ThresholdId.of(id),
+      ThresholdName.of(name),
       utilityType,
       ThresholdValue.of(100),
       ThresholdType.ACTUAL,
@@ -78,8 +81,8 @@ describe("ThresholdMonitoringService", () => {
   describe("polling and notifications", () => {
     it("should notify when detecting active thresholds for the first time", async () => {
       const thresholds = [
-        createMockThreshold("1", UtilityType.ELECTRICITY),
-        createMockThreshold("2", UtilityType.WATER),
+        createMockThreshold("1", "T1", UtilityType.ELECTRICITY),
+        createMockThreshold("2", "T2", UtilityType.WATER),
       ];
 
       vi.mocked(mockRepository.findByFilters).mockResolvedValue(thresholds);
@@ -87,19 +90,18 @@ describe("ThresholdMonitoringService", () => {
       await service.start();
       await new Promise((resolve) => setTimeout(resolve, 150));
 
-      expect(mockRepository.findByFilters).toHaveBeenCalledWith(
-        undefined,
-        undefined,
-        undefined,
-        ThresholdState.ENABLED,
-      );
+      expect(mockRepository.findByFilters).toHaveBeenCalledWith({
+        state: ThresholdState.ENABLED,
+      });
       expect(mockNotificationPort.notifyThresholdsChange).toHaveBeenCalledWith(
         thresholds,
       );
     });
 
     it("should not notify if thresholds have not changed", async () => {
-      const thresholds = [createMockThreshold("1", UtilityType.ELECTRICITY)];
+      const thresholds = [
+        createMockThreshold("1", "T1", UtilityType.ELECTRICITY),
+      ];
 
       vi.mocked(mockRepository.findByFilters).mockResolvedValue(thresholds);
 
@@ -112,10 +114,12 @@ describe("ThresholdMonitoringService", () => {
     });
 
     it("should notify when thresholds change", async () => {
-      const thresholds1 = [createMockThreshold("1", UtilityType.ELECTRICITY)];
+      const thresholds1 = [
+        createMockThreshold("1", "T1", UtilityType.ELECTRICITY),
+      ];
       const thresholds2 = [
-        createMockThreshold("1", UtilityType.ELECTRICITY),
-        createMockThreshold("2", UtilityType.WATER),
+        createMockThreshold("1", "T1", UtilityType.ELECTRICITY),
+        createMockThreshold("2", "T2", UtilityType.WATER),
       ];
 
       vi.mocked(mockRepository.findByFilters)
@@ -144,7 +148,7 @@ describe("ThresholdMonitoringService", () => {
       vi.mocked(mockRepository.findByFilters)
         .mockRejectedValueOnce(new Error("Database error"))
         .mockResolvedValueOnce([
-          createMockThreshold("1", UtilityType.ELECTRICITY),
+          createMockThreshold("1", "T1", UtilityType.ELECTRICITY),
         ]);
 
       await service.start();
