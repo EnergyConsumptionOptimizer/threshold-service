@@ -30,6 +30,8 @@ const thresholdSchema = new Schema(
 
 thresholdSchema.index({ name: 1 }, { unique: true });
 
+/** Infer the Mongoose document type for the threshold schema. */
 export type Threshold = InferSchemaType<typeof thresholdSchema>;
 
+/** Expose the Mongoose model for thresholds. */
 export const ThresholdModel = model<Threshold>("Threshold", thresholdSchema);

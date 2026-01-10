@@ -7,6 +7,7 @@ import { PeriodType } from "@domain/value/PeriodType";
 import { ThresholdState } from "@domain/value/ThresholdState";
 import { ThresholdName } from "@domain/value/ThresholdName";
 
+/** Define the persisted shape used by the threshold collection. */
 export interface ThresholdDoc {
   _id: string;
   name: string;
@@ -17,6 +18,10 @@ export interface ThresholdDoc {
   thresholdState: string;
 }
 
+/**
+ * Map a domain threshold to a persistence-ready document.
+ * @returns The persistence shape.
+ */
 export function toPersistence(threshold: Threshold) {
   return {
     name: threshold.name.toString(),
@@ -28,6 +33,10 @@ export function toPersistence(threshold: Threshold) {
   };
 }
 
+/**
+ * Map a persisted document to a domain threshold.
+ * @returns The domain threshold.
+ */
 export function toDomain(doc: ThresholdDoc): Threshold {
   return Threshold.create(
     ThresholdId.of(doc._id),

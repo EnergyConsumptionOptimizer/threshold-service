@@ -17,7 +17,12 @@ import {
   toPersistence,
 } from "@storage/mappers/thresholdDocumentMapper";
 
+/** Persist and query thresholds using MongoDB via Mongoose. */
 export class MongoThresholdRepository implements ThresholdRepositoryPort {
+  /**
+   * List all thresholds.
+   * @returns Thresholds ordered by creation date (descending).
+   */
   async findAll(): Promise<Threshold[]> {
     const docs = await ThresholdModel.find()
       .sort({ createdAt: -1 })
@@ -27,6 +32,10 @@ export class MongoThresholdRepository implements ThresholdRepositoryPort {
     return docs.map(toDomain);
   }
 
+  /**
+   * Find a threshold by ID.
+   * @returns The threshold, or null when missing.
+   */
   async findById(id: ThresholdId): Promise<Threshold | null> {
     const doc = await ThresholdModel.findById(id.value)
       .lean<ThresholdDoc>()
@@ -35,6 +44,10 @@ export class MongoThresholdRepository implements ThresholdRepositoryPort {
     return doc ? toDomain(doc) : null;
   }
 
+  /**
+   * Find thresholds matching filters.
+   * @returns Matching thresholds ordered by creation date (descending).
+   */
   async findByFilters(filters: ThresholdFilters): Promise<Threshold[]> {
     const mongoQuery = {
       ...(filters.name && { name: filters.name.toString() }),
@@ -52,6 +65,10 @@ export class MongoThresholdRepository implements ThresholdRepositoryPort {
     return docs.map(toDomain);
   }
 
+  /**
+   * Save a new threshold.
+   * @returns The persisted threshold.
+   */
   async save(threshold: Threshold): Promise<Threshold> {
     try {
       const doc = await ThresholdModel.create({
@@ -68,6 +85,10 @@ export class MongoThresholdRepository implements ThresholdRepositoryPort {
     }
   }
 
+  /**
+   * Update an existing threshold.
+   * @returns The updated threshold, or null when missing.
+   */
   async update(
     thresholdID: ThresholdId,
     attrs: Partial<Threshold>,
@@ -95,6 +116,7 @@ export class MongoThresholdRepository implements ThresholdRepositoryPort {
     }
   }
 
+  /** Delete a threshold. */
   async delete(thresholdId: ThresholdId): Promise<void> {
     await ThresholdModel.deleteOne({ _id: thresholdId.value }).exec();
   }

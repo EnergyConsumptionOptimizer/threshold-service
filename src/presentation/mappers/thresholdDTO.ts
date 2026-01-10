@@ -1,5 +1,6 @@
 import { Threshold } from "@domain/Threshold";
 
+/** Defines the HTTP-facing representation of a threshold. */
 export interface ThresholdDTO {
   id: string;
   name: string;
@@ -10,6 +11,10 @@ export interface ThresholdDTO {
   thresholdState: string;
 }
 
+/**
+ * Map a domain threshold to a DTO.
+ * @returns The mapped DTO.
+ */
 export function toThresholdDTO(threshold: Threshold): ThresholdDTO {
   return {
     id: threshold.id.value,
@@ -22,6 +27,10 @@ export function toThresholdDTO(threshold: Threshold): ThresholdDTO {
   };
 }
 
+/**
+ * Map multiple domain thresholds to DTOs.
+ * @returns The mapped DTO list.
+ */
 export function toThresholdDTOs(
   thresholds: readonly Threshold[],
 ): ThresholdDTO[] {

@@ -19,10 +19,12 @@ const thresholdBaseSchema = z.object({
   periodType: z.enum(PeriodType),
 });
 
+/** Validate one aggregation entry for forecast evaluation requests. */
 export const PeriodAggregationSchema = thresholdBaseSchema
   .pick({ periodType: true, value: true })
   .extend({ value: z.number().positive() });
 
+/** Validate payloads for threshold creation requests. */
 export const createThresholdSchema = thresholdBaseSchema
   .omit({ thresholdState: true, periodType: true })
   .extend({
@@ -30,6 +32,7 @@ export const createThresholdSchema = thresholdBaseSchema
     periodType: optionalPeriodTypeSchema,
   });
 
+/** Validate payloads for threshold update requests. */
 export const updateThresholdSchema = thresholdBaseSchema
   .omit({ periodType: true })
   .partial()
@@ -46,6 +49,7 @@ export const updateThresholdSchema = thresholdBaseSchema
     message: "At least one field must be provided for update",
   });
 
+/** Validate query parameters for threshold listing requests. */
 export const listThresholdSchema = thresholdBaseSchema
   .omit({ value: true })
   .partial()
@@ -58,6 +62,7 @@ export const listThresholdSchema = thresholdBaseSchema
       .optional(),
   });
 
+/** Validate payloads for forecast evaluation requests. */
 export const evaluateThresholdSchema = thresholdBaseSchema
   .pick({ utilityType: true })
   .extend({ aggregations: z.array(PeriodAggregationSchema).nonempty() });
