@@ -22,6 +22,9 @@ The Threshold Service handles threshold management (CRUD) and the core logic for
 
 ## REST API Endpoints
 
+### Healthcheck
+- `GET /health`
+
 ### Thresholds
 - `POST /api/thresholds`
 - `GET /api/thresholds`
@@ -30,7 +33,7 @@ The Threshold Service handles threshold management (CRUD) and the core logic for
 - `DELETE /api/thresholds/:id`
 
 ### Threshold Evaluations
-- `POST /api/thresholds/evaluations/forecast`
+- `POST /api/internal/thresholds/evaluations/forecast`
 
 ## Authors
 - Rares Vasiliu ([rares-vsl](https://github.com/rares-vsl))
