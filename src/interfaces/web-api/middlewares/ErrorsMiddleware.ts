@@ -3,17 +3,26 @@ import { ZodError } from "zod";
 import axios from "axios";
 import {
   ActualThresholdWithPeriodError,
-  InvalidQueryParametersError,
   InvalidThresholdIdError,
   InvalidThresholdValueError,
   MissingPeriodTypeForThresholdError,
   ThresholdAlreadyExistsError,
   ThresholdNotFoundError,
+} from "@domain/errors";
+import {
+  ForbiddenError,
+  InvalidQueryParametersError,
   InvalidTokenError,
   UnauthorizedError,
-  ForbiddenError,
-} from "@domain/errors";
+} from "@interfaces/web-api/errors";
 
+/**
+ * Express error handler that maps known errors to HTTP responses.
+ *
+ * @param error The error forwarded by controllers or middleware.
+ * @param res The HTTP response.
+ * @returns An HTTP response matching the error type.
+ */
 export const errorsHandler = (
   error: unknown,
   _req: Request,

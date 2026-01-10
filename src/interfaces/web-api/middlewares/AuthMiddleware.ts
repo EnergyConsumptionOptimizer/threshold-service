@@ -1,7 +1,8 @@
 import { type NextFunction, type Request, type Response } from "express";
 import axios from "axios";
-import { InvalidTokenError } from "@domain/errors";
+import { InvalidTokenError } from "@interfaces/web-api/errors";
 
+/** Request augmented with the authenticated user context. */
 export interface AuthenticatedRequest extends Request {
   user?: {
     _id: string;
@@ -9,10 +10,13 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
+/**
+ * Express authentication middleware backed by the user service.
+ *
+ * Verifies the auth cookie by calling the user service internal verification endpoints.
+ */
 export class AuthMiddleware {
-  private readonly USER_SERVICE_URI =
-    process.env.USER_SERVICE_URI ||
-    `http://${process.env.USER_SERVICE_HOST || "user"}:${process.env.USER_SERVICE_PORT || 3000}`;
+  constructor(private readonly userServiceUri: string) {}
 
   private getAuthTokenFromCookies(request: Request): string {
     const token = request.cookies?.["authToken"];
@@ -29,7 +33,7 @@ export class AuthMiddleware {
   ) {
     try {
       const token = this.getAuthTokenFromCookies(request);
-      const response = await axios.get(this.USER_SERVICE_URI + `${endpoint}`, {
+      const response = await axios.get(this.userServiceUri + `${endpoint}`, {
         headers: {
           Cookie: `authToken=${token}`,
         },
@@ -45,6 +49,11 @@ export class AuthMiddleware {
     }
   }
 
+  /**
+   * Authenticate a request.
+   *
+   * @returns A middleware callback that either sets `request.user` or forwards an error.
+   */
   authenticate = async (
     request: Request,
     _res: Response,
@@ -53,6 +62,11 @@ export class AuthMiddleware {
     await this.verifyToken("/api/internal/auth/verify", request, next);
   };
 
+  /**
+   * Authenticate and require an admin role.
+   *
+   * @returns A middleware callback that either sets `request.user` or forwards an error.
+   */
   authenticateAdmin = async (
     request: Request,
     _res: Response,

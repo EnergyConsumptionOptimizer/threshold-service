@@ -6,6 +6,9 @@ import {
 } from "@presentation/mappers/consumptionDataDTO";
 import { connectSocket } from "@interfaces/socket/SocketConnectionHelper";
 
+/**
+ * Subscribe to consumption events from the monitoring service and evaluate them.
+ */
 export class ConsumptionEventListener {
   private socket: Socket | null = null;
 
@@ -14,11 +17,21 @@ export class ConsumptionEventListener {
     private readonly consumptionEvaluationService: ConsumptionEvaluationService,
   ) {}
 
+  /**
+   * Establish the socket connection and register event handlers.
+   *
+   * @returns A promise that resolves once connected.
+   */
   async connect(): Promise<void> {
     this.socket = await connectSocket(this.monitoringServiceUrl);
     this.registerEventHandlers();
   }
 
+  /**
+   * Disconnect and clear listeners.
+   *
+   * @returns A promise that resolves once disconnected.
+   */
   async disconnect(): Promise<void> {
     if (this.socket) {
       this.socket.removeAllListeners();

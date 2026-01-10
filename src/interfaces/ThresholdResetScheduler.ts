@@ -1,12 +1,14 @@
 import cron, { ScheduledTask } from "node-cron";
 import { ResetThresholdUseCase } from "@application/usecases/ResetThresholdUseCase";
 
+/** Schedule daily threshold resets. */
 export class ThresholdResetScheduler {
   private task: ScheduledTask | null = null;
   private readonly cronExpression = "0 0 * * *";
 
   constructor(private readonly resetUseCase: ResetThresholdUseCase) {}
 
+  /** Start the scheduler. */
   start() {
     if (!cron.validate(this.cronExpression)) {
       throw new Error(`Invalid cron expression: ${this.cronExpression}`);
@@ -23,6 +25,7 @@ export class ThresholdResetScheduler {
     console.log("Scheduler reset started.");
   }
 
+  /** Stop the scheduler if running. */
   stop() {
     if (this.task) {
       this.task.stop();

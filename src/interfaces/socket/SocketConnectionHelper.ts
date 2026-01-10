@@ -1,5 +1,6 @@
 import { io, Socket } from "socket.io-client";
 
+/** Socket.IO connection options for `connectSocket`. */
 export interface SocketConnectionOptions {
   timeout?: number;
   reconnection?: boolean;
@@ -7,6 +8,13 @@ export interface SocketConnectionOptions {
   reconnectionDelay?: number;
 }
 
+/**
+ * Connect to a Socket.IO server and resolve once connected.
+ *
+ * @param url Socket.IO server URL.
+ * @param options Socket.IO client options.
+ * @returns A connected Socket.IO client.
+ */
 export async function connectSocket(
   url: string,
   options: SocketConnectionOptions = {},
