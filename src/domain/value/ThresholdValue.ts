@@ -1,8 +1,13 @@
 import { InvalidThresholdValueError } from "@domain/errors";
 
+/** Wraps a numeric limit and enforces that it is strictly positive. */
 export class ThresholdValue {
   private constructor(private readonly limit: number) {}
 
+  /**
+   * Create a validated threshold limit.
+   * @returns The validated threshold value.
+   */
   static of(limit: number): ThresholdValue {
     if (limit <= 0) {
       throw new InvalidThresholdValueError(

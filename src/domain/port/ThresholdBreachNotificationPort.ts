@@ -1,5 +1,6 @@
 import type { Threshold } from "@domain/Threshold";
 
+/** Carries the consumption sample used to evaluate thresholds. */
 export interface ConsumptionInfo {
   utilityType: string;
   thresholdType: string;
@@ -7,6 +8,7 @@ export interface ConsumptionInfo {
   value: number;
 }
 
+/** Notifies external systems about one or more breached thresholds. */
 export interface ThresholdBreachNotificationPort {
   notifyThresholdsBreach(
     consumption: ConsumptionInfo,

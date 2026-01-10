@@ -3,6 +3,10 @@ import type { ThresholdNotificationPort } from "@domain/port/ThresholdNotificati
 import type { Threshold } from "@domain/Threshold";
 import { ThresholdState } from "@domain/value/ThresholdState";
 
+/**
+ * Poll enabled thresholds and publish changes to a notification port.
+ * @param pollIntervalMs - Defaults to 10 seconds.
+ */
 export class ThresholdMonitoringService {
   private lastSnapshot: Threshold[] = [];
   private intervalId: ReturnType<typeof setInterval> | null = null;

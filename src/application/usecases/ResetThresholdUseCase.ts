@@ -3,9 +3,14 @@ import { ThresholdRepositoryPort } from "@domain/port/ThresholdRepositoryPort";
 import { Threshold } from "@domain/Threshold";
 import { ThresholdState } from "@domain/value/ThresholdState";
 
+/** Reset breached thresholds back to ENABLED based on their configured period. */
 export class ResetThresholdUseCase {
   constructor(private readonly repository: ThresholdRepositoryPort) {}
 
+  /**
+   * Reset eligible breached thresholds and persist the updated state.
+   * @returns The thresholds that were reset.
+   */
   async reset(): Promise<Threshold[]> {
     const now = new Date();
     const thresholds = await this.repository.findAll();

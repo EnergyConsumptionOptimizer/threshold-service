@@ -1,3 +1,4 @@
+/** Defines the aggregation window for period-based thresholds. */
 export enum PeriodType {
   ONE_DAY = "ONE_DAY",
   ONE_WEEK = "ONE_WEEK",

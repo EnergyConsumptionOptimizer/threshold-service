@@ -1,8 +1,14 @@
 import { InvalidThresholdNameError } from "@domain/errors";
 
+/** Wraps a human-readable threshold name and rejects blank values. */
 export class ThresholdName {
   private constructor(private readonly name: string) {}
 
+  /**
+   * Create a validated threshold name.
+   * @param name - Trimmed and validated.
+   * @returns The validated threshold name.
+   */
   static of(name: string): ThresholdName {
     if (!name || name.trim().length === 0) {
       throw new InvalidThresholdNameError(

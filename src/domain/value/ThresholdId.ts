@@ -1,8 +1,14 @@
 import { InvalidThresholdIdError } from "@domain/errors";
 
+/** Wraps a threshold identifier and enforces basic normalization/validation. */
 export class ThresholdId {
   private constructor(public readonly value: string) {}
 
+  /**
+   * Create a normalized threshold ID.
+   * @param value - Trimmed before validation.
+   * @returns The normalized ID.
+   */
   static of(value: string): ThresholdId {
     const normalized = value?.trim();
     if (!normalized) {

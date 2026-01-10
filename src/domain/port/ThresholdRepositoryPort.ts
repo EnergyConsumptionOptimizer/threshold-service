@@ -6,6 +6,7 @@ import { ThresholdType } from "../value/ThresholdType";
 import { ThresholdState } from "@domain/value/ThresholdState";
 import { ThresholdName } from "@domain/value/ThresholdName";
 
+/** Defines optional criteria for querying thresholds. */
 export interface ThresholdFilters {
   name?: ThresholdName;
   utilityType?: UtilityType;
@@ -14,6 +15,10 @@ export interface ThresholdFilters {
   state?: ThresholdState;
 }
 
+/**
+ * Abstracts persistence operations for thresholds.
+ *
+ */
 export interface ThresholdRepositoryPort {
   findById(thresholdId: ThresholdId): Promise<Threshold | null>;
 

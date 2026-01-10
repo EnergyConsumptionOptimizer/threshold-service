@@ -7,6 +7,7 @@ import { ThresholdType } from "@domain/value/ThresholdType";
 import { UtilityType } from "@domain/value/UtilityType";
 import { ThresholdState } from "@domain/value/ThresholdState";
 
+/** Describe a consumption sample to be evaluated against thresholds. */
 export interface ConsumptionParams {
   utilityType: UtilityType;
   thresholdType: ThresholdType;
@@ -14,12 +15,17 @@ export interface ConsumptionParams {
   value: number;
 }
 
+/** Evaluate consumption against active thresholds and optionally emit breach notifications. */
 export class ConsumptionEvaluationService {
   constructor(
     private readonly repository: ThresholdRepositoryPort,
     private readonly notificationPort?: ThresholdBreachNotificationPort,
   ) {}
 
+  /**
+   * Evaluate a single sample.
+   * @returns The thresholds breached by the sample.
+   */
   async evaluateConsumption(
     consumption: ConsumptionParams,
   ): Promise<Threshold[]> {
@@ -36,6 +42,10 @@ export class ConsumptionEvaluationService {
     return breachedThresholds;
   }
 
+  /**
+   * Evaluate multiple samples.
+   * @returns The breached thresholds across all samples.
+   */
   async evaluateBatch(consumptions: ConsumptionParams[]): Promise<Threshold[]> {
     const results = await Promise.all(
       consumptions.map((c) => this.evaluateConsumption(c)),

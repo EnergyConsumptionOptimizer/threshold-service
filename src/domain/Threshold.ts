@@ -10,6 +10,9 @@ import {
 import { ThresholdState } from "@domain/value/ThresholdState";
 import { ThresholdName } from "@domain/value/ThresholdName";
 
+/**
+ * Represent an immutable threshold with domain invariants.
+ */
 export class Threshold {
   private constructor(
     public readonly id: ThresholdId,
@@ -36,6 +39,12 @@ export class Threshold {
     }
   }
 
+  /**
+   * Create a threshold instance.
+   * @param state - Defaults to ENABLED.
+   * @param periodType - Required for HISTORICAL/FORECAST.
+   * @returns The created threshold.
+   */
   static create(
     id: ThresholdId,
     name: ThresholdName,
@@ -48,6 +57,11 @@ export class Threshold {
     return new Threshold(id, name, utilityType, value, type, state, periodType);
   }
 
+  /**
+   * Apply a partial update.
+   * @param attrs - Fields to override.
+   * @returns The updated threshold.
+   */
   update(attrs: Partial<Threshold>): Threshold {
     return Threshold.create(
       this.id,
@@ -60,6 +74,11 @@ export class Threshold {
     );
   }
 
+  /**
+   * Evaluate an input and mark the threshold as breached when enabled and exceeded.
+   * @param input - Value to check.
+   * @returns The updated threshold.
+   */
   public check(input: number): Threshold {
     if (this.thresholdState === ThresholdState.DISABLED) {
       return this;
@@ -72,6 +91,10 @@ export class Threshold {
     return this;
   }
 
+  /**
+   * Set the threshold state.
+   * @returns The updated threshold.
+   */
   public setState(state: ThresholdState): Threshold {
     return this.update({ thresholdState: state });
   }
