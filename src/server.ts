@@ -1,25 +1,25 @@
-import "dotenv/config";
 import mongoose from "mongoose";
-import app from "./app";
-import {
-  thresholdResetScheduler,
-  thresholdMonitoringService,
-  createConsumptionEventListener,
-} from "@interfaces/web-api/dependencies";
+import { createApp } from "./app";
+import { config } from "./config";
+import { createWebApiDependencies } from "@interfaces/web-api/dependencies";
 
-const PORT = parseInt(process.env.PORT || "3000");
-const MONGO_URI =
-  process.env.MONGO_URI ||
-  `mongodb://${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGO_DB}`;
+const webApi = createWebApiDependencies({
+  alertServiceUrl: config.services.alert.uri,
+  monitoringServiceUrl: config.services.monitoring.uri,
+  monitoringIntervalMs: config.services.monitoring.intervalMs,
+  userServiceUrl: config.services.user.uri,
+});
+
+const app = createApp(webApi.apiRouter);
 
 async function connectDatabase() {
-  await mongoose.connect(MONGO_URI);
+  await mongoose.connect(config.db.uri);
   console.log("Database connected");
 }
 
 async function startMonitoring() {
   try {
-    await thresholdMonitoringService.start();
+    await webApi.thresholdMonitoringService.start();
     console.log("Threshold monitoring started");
   } catch (err) {
     console.warn(
@@ -31,7 +31,7 @@ async function startMonitoring() {
 
 async function startConsumptionListener() {
   try {
-    const listener = createConsumptionEventListener();
+    const listener = webApi.createConsumptionEventListener();
     await listener.connect();
     console.log("Consumption listener started");
     return listener;
@@ -48,11 +48,11 @@ async function start() {
   try {
     await connectDatabase();
 
-    app.listen(PORT, () => {
-      console.log(`Server listening on port ${PORT}`);
+    app.listen(config.server.port, () => {
+      console.log(`Server listening on port ${config.server.port}`);
     });
 
-    thresholdResetScheduler.start();
+    webApi.thresholdResetScheduler.start();
     console.log("Reset scheduler started");
 
     await startMonitoring();
