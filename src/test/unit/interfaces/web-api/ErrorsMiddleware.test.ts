@@ -3,16 +3,18 @@ import type { NextFunction, Request, Response } from "express";
 import { errorsHandler } from "@interfaces/web-api/middlewares/ErrorsMiddleware";
 import {
   ActualThresholdWithPeriodError,
-  ForbiddenError,
-  InvalidQueryParametersError,
   InvalidThresholdIdError,
   InvalidThresholdValueError,
-  InvalidTokenError,
   MissingPeriodTypeForThresholdError,
   ThresholdAlreadyExistsError,
   ThresholdNotFoundError,
-  UnauthorizedError,
 } from "@domain/errors";
+import {
+  ForbiddenError,
+  InvalidQueryParametersError,
+  InvalidTokenError,
+  UnauthorizedError,
+} from "@interfaces/web-api/errors";
 import { ZodError } from "zod";
 import axios from "axios";
 import { ThresholdType } from "@domain/value/ThresholdType";

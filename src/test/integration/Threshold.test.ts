@@ -171,7 +171,6 @@ describe("Threshold API Integration Tests", () => {
     beforeEach(async () => {
       mockAdminAuthSuccess();
 
-      // Seed data using cookies
       await request(app)
         .post("/api/thresholds")
         .set("Cookie", authCookie)
