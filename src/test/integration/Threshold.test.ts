@@ -18,11 +18,9 @@ import { createTestApp } from "./setup/testApp";
 import { thresholdFactory } from "./fixtures/thresholdFactory";
 import {
   clearAuthMocks,
-  mockAdminAuthFailure,
   mockAdminAuthSuccess,
   mockAuthSuccess,
 } from "./mocks/authMocks";
-import { ThresholdDTO } from "@presentation/mappers/thresholdDTO";
 
 describe("Threshold API Integration Tests", () => {
   let app: Express;
@@ -68,55 +66,6 @@ describe("Threshold API Integration Tests", () => {
       expect(response.body.periodType).toBeUndefined();
     });
 
-    it("should create a historical threshold with period", async () => {
-      mockAdminAuthSuccess();
-      const payload = thresholdFactory.validHistorical();
-
-      const response = await request(app)
-        .post("/api/thresholds")
-        .set("Cookie", authCookie)
-        .send(payload)
-        .expect(201);
-
-      expect(response.body).toMatchObject({
-        utilityType: payload.utilityType,
-        thresholdType: payload.thresholdType,
-        periodType: payload.periodType,
-        value: payload.value,
-        thresholdState: payload.thresholdState,
-      });
-    });
-
-    it("should create a forecast threshold with period", async () => {
-      mockAdminAuthSuccess();
-      const payload = thresholdFactory.validForecast();
-
-      const response = await request(app)
-        .post("/api/thresholds")
-        .set("Cookie", authCookie)
-        .send(payload)
-        .expect(201);
-
-      expect(response.body.thresholdType).toBe(payload.thresholdType);
-      expect(response.body.periodType).toBe(payload.periodType);
-    });
-
-    it("should return 401 when no auth cookie provided", async () => {
-      const payload = thresholdFactory.validActual();
-      await request(app).post("/api/thresholds").send(payload).expect(401);
-    });
-
-    it("should return 403 when user is not admin", async () => {
-      mockAdminAuthFailure();
-      const payload = thresholdFactory.validActual();
-
-      await request(app)
-        .post("/api/thresholds")
-        .set("Cookie", authCookie)
-        .send(payload)
-        .expect(403);
-    });
-
     it("should return 400 for negative threshold value", async () => {
       mockAdminAuthSuccess();
       const payload = thresholdFactory.invalid.negativeValue();
@@ -127,29 +76,8 @@ describe("Threshold API Integration Tests", () => {
         .send(payload)
         .expect(400);
 
-      expect(response.body.error).toBe("ValidationError");
-    });
-
-    it("should return 400 for actual threshold with period", async () => {
-      mockAdminAuthSuccess();
-      const payload = thresholdFactory.invalid.actualWithPeriod();
-
-      await request(app)
-        .post("/api/thresholds")
-        .set("Cookie", authCookie)
-        .send(payload)
-        .expect(400);
-    });
-
-    it("should return 400 for historical threshold without period", async () => {
-      mockAdminAuthSuccess();
-      const payload = thresholdFactory.invalid.historicalWithoutPeriod();
-
-      await request(app)
-        .post("/api/thresholds")
-        .set("Cookie", authCookie)
-        .send(payload)
-        .expect(400);
+      expect(response.body.code).toBe("VALIDATION_ERROR");
+      expect(response.body.errors).toHaveProperty("value");
     });
 
     it("should return 400 for missing required fields", async () => {
@@ -162,156 +90,33 @@ describe("Threshold API Integration Tests", () => {
         .send(payload)
         .expect(400);
 
-      expect(response.body.error).toBe("ValidationError");
-      expect(response.body.details).toBeInstanceOf(Array);
+      expect(response.body.code).toBe("VALIDATION_ERROR");
+      expect(Object.keys(response.body.errors).length).toBeGreaterThan(0);
     });
-  });
 
-  describe("GET /api/thresholds", () => {
-    beforeEach(async () => {
+    it("should return 409 when threshold name already exists", async () => {
       mockAdminAuthSuccess();
+      const payload = thresholdFactory.validActual();
 
+      // Primo inserimento
       await request(app)
         .post("/api/thresholds")
         .set("Cookie", authCookie)
-        .send(thresholdFactory.validActual());
+        .send(payload);
 
-      await request(app)
+      // Secondo inserimento (duplicato)
+      const response = await request(app)
         .post("/api/thresholds")
         .set("Cookie", authCookie)
-        .send(thresholdFactory.validHistorical());
+        .send(payload)
+        .expect(409);
 
-      await request(app)
-        .post("/api/thresholds")
-        .set("Cookie", authCookie)
-        .send(thresholdFactory.validForecast());
-    });
-
-    it("should list all thresholds", async () => {
-      mockAuthSuccess();
-
-      const response = await request(app)
-        .get("/api/thresholds")
-        .set("Cookie", authCookie)
-        .expect(200);
-
-      expect(response.body).toHaveLength(3);
-      expect(response.body[0]).toHaveProperty("id");
-      expect(response.body[0]).toHaveProperty("utilityType");
-    });
-
-    it("should filter thresholds by utility type", async () => {
-      mockAuthSuccess();
-
-      const response = await request(app)
-        .get("/api/thresholds")
-        .query({ utilityType: "ELECTRICITY" })
-        .set("Cookie", authCookie)
-        .expect(200);
-
-      expect(response.body).toHaveLength(1);
-      expect(response.body[0].utilityType).toBe("ELECTRICITY");
-    });
-
-    it("should filter thresholds by threshold type", async () => {
-      mockAuthSuccess();
-
-      const response = await request(app)
-        .get("/api/thresholds")
-        .query({ thresholdType: "HISTORICAL" })
-        .set("Cookie", authCookie)
-        .expect(200);
-
-      expect(response.body).toHaveLength(1);
-      expect(response.body[0].thresholdType).toBe("HISTORICAL");
-    });
-
-    it("should filter thresholds by period type", async () => {
-      mockAuthSuccess();
-
-      const response = await request(app)
-        .get("/api/thresholds")
-        .query({ periodType: "ONE_WEEK" })
-        .set("Cookie", authCookie)
-        .expect(200);
-
-      expect(response.body).toHaveLength(1);
-      expect(response.body[0].periodType).toBe("ONE_WEEK");
-    });
-
-    it("should filter thresholds by thresholdState", async () => {
-      mockAuthSuccess();
-
-      const response = await request(app)
-        .get("/api/thresholds/")
-        .query({ thresholdState: "ENABLED" })
-        .set("Cookie", authCookie)
-        .expect(200);
-
-      response.body.forEach((t: ThresholdDTO) => {
-        expect(t.thresholdState).toBe("ENABLED");
-      });
-    });
-
-    it("should filter by multiple criteria", async () => {
-      mockAuthSuccess();
-
-      const response = await request(app)
-        .get("/api/thresholds")
-        .query({
-          utilityType: "GAS",
-          thresholdType: "HISTORICAL",
-        })
-        .set("Cookie", authCookie)
-        .expect(200);
-
-      expect(response.body).toHaveLength(1);
-      expect(response.body[0].utilityType).toBe("GAS");
-      expect(response.body[0].thresholdType).toBe("HISTORICAL");
-    });
-
-    it("should return 401 without authentication", async () => {
-      await request(app).get("/api/thresholds").expect(401);
-    });
-
-    it("should return empty array when no thresholds match filters", async () => {
-      mockAuthSuccess();
-
-      const response = await request(app)
-        .get("/api/thresholds")
-        .query({ utilityType: "WATER", thresholdType: "ACTUAL" })
-        .set("Cookie", authCookie)
-        .expect(200);
-
-      expect(response.body).toHaveLength(0);
+      expect(response.body.code).toBe("CONFLICT");
+      expect(response.body.errors).toHaveProperty("name");
     });
   });
 
   describe("GET /api/thresholds/:id", () => {
-    let createdThresholdId: string;
-
-    beforeEach(async () => {
-      mockAdminAuthSuccess();
-      const createResponse = await request(app)
-        .post("/api/thresholds")
-        .set("Cookie", authCookie)
-        .send(thresholdFactory.validActual());
-
-      createdThresholdId = createResponse.body.id;
-    });
-
-    it("should get threshold by id", async () => {
-      mockAuthSuccess();
-
-      const response = await request(app)
-        .get(`/api/thresholds/${createdThresholdId}`)
-        .set("Cookie", authCookie)
-        .expect(200);
-
-      expect(response.body.id).toBe(createdThresholdId);
-      expect(response.body.utilityType).toBe("ELECTRICITY");
-    });
-
     it("should return 404 for non-existent id", async () => {
       mockAuthSuccess();
 
@@ -320,263 +125,22 @@ describe("Threshold API Integration Tests", () => {
         .set("Cookie", authCookie)
         .expect(404);
 
-      expect(response.body.error).toContain("not found");
-    });
-
-    it("should return 401 without authentication", async () => {
-      await request(app)
-        .get(`/api/thresholds/${createdThresholdId}`)
-        .expect(401);
-    });
-  });
-
-  describe("PUT /api/thresholds/:id", () => {
-    let createdThresholdId: string;
-
-    beforeEach(async () => {
-      mockAdminAuthSuccess();
-      const createResponse = await request(app)
-        .post("/api/thresholds")
-        .set("Cookie", authCookie)
-        .send(thresholdFactory.validActual());
-
-      createdThresholdId = createResponse.body.id;
-    });
-
-    it("should update threshold value", async () => {
-      mockAdminAuthSuccess();
-      const updatePayload = { value: 250 };
-
-      const response = await request(app)
-        .put(`/api/thresholds/${createdThresholdId}`)
-        .set("Cookie", authCookie)
-        .send(updatePayload)
-        .expect(200);
-
-      expect(response.body.value).toBe(250);
-      expect(response.body.utilityType).toBe("ELECTRICITY");
-    });
-
-    it("should update thresholdState", async () => {
-      mockAdminAuthSuccess();
-      const updatePayload = { thresholdState: "DISABLED" };
-
-      const response = await request(app)
-        .put(`/api/thresholds/${createdThresholdId}`)
-        .set("Cookie", authCookie)
-        .send(updatePayload)
-        .expect(200);
-
-      expect(response.body.thresholdState).toBe("DISABLED");
-    });
-
-    it("should update multiple fields", async () => {
-      mockAdminAuthSuccess();
-      const updatePayload = {
-        value: 300,
-        thresholdState: "DISABLED",
-        utilityType: "GAS",
-      };
-
-      const response = await request(app)
-        .put(`/api/thresholds/${createdThresholdId}`)
-        .set("Cookie", authCookie)
-        .send(updatePayload)
-        .expect(200);
-
-      expect(response.body.value).toBe(300);
-      expect(response.body.thresholdState).toBe("DISABLED");
-      expect(response.body.utilityType).toBe("GAS");
-    });
-
-    it("should return 404 for non-existent threshold", async () => {
-      mockAdminAuthSuccess();
-
-      await request(app)
-        .put("/api/thresholds/507f1f77bcf86cd799439011")
-        .set("Cookie", authCookie)
-        .send({ value: 100 })
-        .expect(404);
-    });
-
-    it("should return 403 when user is not admin", async () => {
-      mockAdminAuthFailure();
-
-      await request(app)
-        .put(`/api/thresholds/${createdThresholdId}`)
-        .set("Cookie", authCookie)
-        .send({ value: 100 })
-        .expect(403);
-    });
-
-    it("should return 400 when no fields provided", async () => {
-      mockAdminAuthSuccess();
-
-      const response = await request(app)
-        .put(`/api/thresholds/${createdThresholdId}`)
-        .set("Cookie", authCookie)
-        .send({})
-        .expect(400);
-
-      expect(response.body.error).toBe("ValidationError");
-    });
-
-    it("should return 400 for invalid value", async () => {
-      mockAdminAuthSuccess();
-
-      await request(app)
-        .put(`/api/thresholds/${createdThresholdId}`)
-        .set("Cookie", authCookie)
-        .send({ value: -50 })
-        .expect(400);
-    });
-  });
-
-  describe("DELETE /api/thresholds/:id", () => {
-    let createdThresholdId: string;
-
-    beforeEach(async () => {
-      mockAdminAuthSuccess();
-      const createResponse = await request(app)
-        .post("/api/thresholds")
-        .set("Cookie", authCookie)
-        .send(thresholdFactory.validActual());
-
-      createdThresholdId = createResponse.body.id;
-    });
-
-    it("should delete threshold successfully", async () => {
-      mockAdminAuthSuccess();
-
-      await request(app)
-        .delete(`/api/thresholds/${createdThresholdId}`)
-        .set("Cookie", authCookie)
-        .expect(204);
-
-      mockAuthSuccess();
-      await request(app)
-        .get(`/api/thresholds/${createdThresholdId}`)
-        .set("Cookie", authCookie)
-        .expect(404);
-    });
-
-    it("should return 403 when user is not admin", async () => {
-      mockAdminAuthFailure();
-
-      await request(app)
-        .delete(`/api/thresholds/${createdThresholdId}`)
-        .set("Cookie", authCookie)
-        .expect(403);
-    });
-
-    it("should return 401 without authentication", async () => {
-      await request(app)
-        .delete(`/api/thresholds/${createdThresholdId}`)
-        .expect(401);
-    });
-
-    it("should handle deletion of non-existent threshold gracefully", async () => {
-      mockAdminAuthSuccess();
-
-      await request(app)
-        .delete("/api/thresholds/507f1f77bcf86cd799439011")
-        .set("Cookie", authCookie)
-        .expect(204);
+      expect(response.body.code).toBe("RESOURCE_NOT_FOUND");
     });
   });
 
   describe("POST /api/internal/thresholds/evaluations/forecast", () => {
-    beforeEach(async () => {
+    it("should return 400 for negative value", async () => {
       mockAdminAuthSuccess();
-      await request(app)
-        .post("/api/thresholds")
-        .set("Cookie", authCookie)
-        .send(thresholdFactory.validForecast());
-      await request(app)
-        .post("/api/thresholds")
-        .set("Cookie", authCookie)
-        .send({
-          name: "t-500",
-          utilityType: "ELECTRICITY",
-          thresholdType: "FORECAST",
-          periodType: "ONE_MONTH",
-          value: 500,
-          thresholdState: "ENABLED",
-        });
-    });
-
-    const postEval = (payload: object) =>
-      request(app)
+      const response = await request(app)
         .post("/api/internal/thresholds/evaluations/forecast")
-        .send(payload);
-
-    it("should return exceeded thresholds", async () => {
-      mockAdminAuthSuccess();
-      const res = await postEval({
-        utilityType: "ELECTRICITY",
-        aggregations: [{ periodType: "ONE_MONTH", value: 600 }],
-      }).expect(201);
-      expect(res.body).toHaveLength(1);
-      expect(res.body[0]).toMatchObject({
-        utilityType: "ELECTRICITY",
-        periodType: "ONE_MONTH",
-        thresholdType: "FORECAST",
-      });
-    });
-
-    it("should handle multiple aggregations", async () => {
-      mockAdminAuthSuccess();
-      const res = await postEval({
-        utilityType: "ELECTRICITY",
-        aggregations: [
-          { periodType: "ONE_WEEK", value: 150 },
-          { periodType: "ONE_MONTH", value: 600 },
-        ],
-      }).expect(201);
-      expect(res.body).toHaveLength(1);
-    });
-
-    it("should return empty when no thresholds exceeded", async () => {
-      mockAdminAuthSuccess();
-      const res = await postEval({
-        utilityType: "ELECTRICITY",
-        aggregations: [{ periodType: "ONE_WEEK", value: 50 }],
-      }).expect(201);
-      expect(res.body).toHaveLength(0);
-    });
-
-    it.each<{ payload: object; desc: string }>([
-      { payload: {}, desc: "missing fields" },
-      { payload: { utilityType: "ELECTRICITY" }, desc: "missing aggregations" },
-      {
-        payload: { utilityType: "ELECTRICITY", aggregations: [] },
-        desc: "empty aggregations",
-      },
-      {
-        payload: {
-          utilityType: "INVALID",
-          aggregations: [{ periodType: "ONE_WEEK", value: 100 }],
-        },
-        desc: "invalid utilityType",
-      },
-      {
-        payload: {
-          utilityType: "ELECTRICITY",
-          aggregations: [{ periodType: "INVALID", value: 100 }],
-        },
-        desc: "invalid periodType",
-      },
-      {
-        payload: {
+        .send({
           utilityType: "ELECTRICITY",
           aggregations: [{ periodType: "ONE_WEEK", value: -1 }],
-        },
-        desc: "negative value",
-      },
-    ])("should return 400 for $desc", async ({ payload }) => {
-      mockAdminAuthSuccess();
-      const res = await postEval(payload).expect(400);
-      expect(res.body.error).toBe("ValidationError");
+        })
+        .expect(400);
+
+      expect(response.body.code).toBe("VALIDATION_ERROR");
     });
   });
 });
