@@ -1,13 +1,14 @@
 import type { ThresholdRepositoryPort } from "@domain/port/ThresholdRepositoryPort";
 import type { Threshold } from "@domain/Threshold";
-import type { ThresholdBreachNotificationPort } from "@domain/port/ThresholdBreachNotificationPort";
-import type { ConsumptionInfo } from "@domain/port/ThresholdBreachNotificationPort";
+import type {
+  ThresholdBreachNotificationPort,
+  ConsumptionInfo,
+} from "@domain/port/ThresholdBreachNotificationPort";
 import { PeriodType } from "@domain/value/PeriodType";
 import { ThresholdType } from "@domain/value/ThresholdType";
 import { UtilityType } from "@domain/value/UtilityType";
 import { ThresholdState } from "@domain/value/ThresholdState";
 
-/** Describe a consumption sample to be evaluated against thresholds. */
 export interface ConsumptionParams {
   utilityType: UtilityType;
   thresholdType: ThresholdType;
@@ -15,91 +16,112 @@ export interface ConsumptionParams {
   value: number;
 }
 
-/** Evaluate consumption against active thresholds and optionally emit breach notifications. */
+export interface UtilityReadings {
+  electricity?: { value: number };
+  water?: { value: number };
+  gas?: { value: number };
+}
+
+export interface EvaluationContext {
+  thresholdType: ThresholdType;
+  periodType?: PeriodType;
+}
+
 export class ConsumptionEvaluationService {
+  private readonly utilityMap: Record<string, UtilityType> = {
+    electricity: UtilityType.ELECTRICITY,
+    water: UtilityType.WATER,
+    gas: UtilityType.GAS,
+  };
+
   constructor(
     private readonly repository: ThresholdRepositoryPort,
     private readonly notificationPort?: ThresholdBreachNotificationPort,
   ) {}
 
-  /**
-   * Evaluate a single sample.
-   * @returns The thresholds breached by the sample.
-   */
-  async evaluateConsumption(
-    consumption: ConsumptionParams,
-  ): Promise<Threshold[]> {
-    const activeThresholds = await this.fetchActiveThresholds(consumption);
-    const breachedThresholds = this.detectBreaches(
-      activeThresholds,
-      consumption.value,
-    );
+  async processReadings(
+    readings: UtilityReadings,
+    context: EvaluationContext,
+  ): Promise<void> {
+    const evaluations: Promise<Threshold[]>[] = [];
 
-    if (breachedThresholds.length > 0) {
-      await this.processBreaches(breachedThresholds, consumption);
+    for (const [key, data] of Object.entries(readings)) {
+      if (key in this.utilityMap && data) {
+        evaluations.push(
+          this.evaluate({
+            utilityType: this.utilityMap[key],
+            thresholdType: context.thresholdType,
+            periodType: context.periodType,
+            value: data.value,
+          }),
+        );
+      }
     }
 
-    return breachedThresholds;
+    const results = await Promise.allSettled(evaluations);
+
+    results.forEach((res) => {
+      if (res.status === "rejected") {
+        console.error("Evaluation failed:", res.reason);
+      }
+    });
   }
 
-  /**
-   * Evaluate multiple samples.
-   * @returns The breached thresholds across all samples.
-   */
+  async evaluate(params: ConsumptionParams): Promise<Threshold[]> {
+    const activeThresholds = await this.fetchActiveThresholds(params);
+    const breaches = activeThresholds
+      .map((t) => t.check(params.value))
+      .filter((t) => t.thresholdState === ThresholdState.BREACHED);
+
+    if (breaches.length > 0) {
+      await this.handleBreaches(breaches, params);
+    }
+
+    return breaches;
+  }
+
   async evaluateBatch(consumptions: ConsumptionParams[]): Promise<Threshold[]> {
     const results = await Promise.all(
-      consumptions.map((c) => this.evaluateConsumption(c)),
+      consumptions.map((c) => this.evaluate(c)),
     );
     return results.flat();
   }
 
   private async fetchActiveThresholds(
-    consumption: ConsumptionParams,
+    params: ConsumptionParams,
   ): Promise<Threshold[]> {
     const periodType =
-      consumption.thresholdType === ThresholdType.ACTUAL
+      params.thresholdType === ThresholdType.ACTUAL
         ? undefined
-        : consumption.periodType;
-
-    const thresholds = await this.repository.findByFilters({
-      utilityType: consumption.utilityType,
-      periodType: periodType,
-      thresholdType: consumption.thresholdType,
-    });
-
-    return thresholds.filter(
-      (t) => t.thresholdState === ThresholdState.ENABLED,
-    );
+        : params.periodType;
+    return (
+      await this.repository.findByFilters({
+        utilityType: params.utilityType,
+        periodType,
+        thresholdType: params.thresholdType,
+      })
+    ).filter((t) => t.thresholdState === ThresholdState.ENABLED);
   }
 
-  private detectBreaches(thresholds: Threshold[], value: number): Threshold[] {
-    return thresholds
-      .map((t) => t.check(value))
-      .filter((t) => t.thresholdState === ThresholdState.BREACHED);
-  }
-
-  private async processBreaches(
-    breachedThresholds: Threshold[],
-    consumption: ConsumptionParams,
+  private async handleBreaches(
+    breaches: Threshold[],
+    params: ConsumptionParams,
   ): Promise<void> {
-    await Promise.all(
-      breachedThresholds.map((t) => this.repository.update(t.id, t)),
-    );
-
+    await Promise.all(breaches.map((t) => this.repository.update(t.id, t)));
     if (this.notificationPort) {
       await this.notificationPort.notifyThresholdsBreach(
-        this.toConsumptionInfo(consumption),
-        breachedThresholds,
+        this.mapToInfo(params),
+        breaches,
       );
     }
   }
 
-  private toConsumptionInfo(consumption: ConsumptionParams): ConsumptionInfo {
+  private mapToInfo(params: ConsumptionParams): ConsumptionInfo {
     return {
-      utilityType: consumption.utilityType,
-      thresholdType: consumption.thresholdType,
-      periodType: consumption.periodType,
-      value: consumption.value,
+      utilityType: params.utilityType,
+      thresholdType: params.thresholdType,
+      periodType: params.periodType,
+      value: params.value,
     };
   }
 }

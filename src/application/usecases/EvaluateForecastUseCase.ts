@@ -26,7 +26,7 @@ export class EvaluateForecastUseCase {
   }): Promise<Threshold[]> {
     const resultsPerAggregation = await Promise.all(
       input.aggregations.map((a) =>
-        this.evaluationService.evaluateConsumption({
+        this.evaluationService.evaluate({
           utilityType: input.utilityType,
           thresholdType: ThresholdType.FORECAST,
           periodType: a.periodType,

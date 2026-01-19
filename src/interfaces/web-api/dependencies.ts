@@ -5,9 +5,7 @@ import { router } from "@interfaces/web-api/routes/router";
 import { ResetThresholdUseCase } from "@application/usecases/ResetThresholdUseCase";
 import { ThresholdResetScheduler } from "@interfaces/ThresholdResetScheduler";
 import { ThresholdMonitoringService } from "@application/services/ThresholdMonitoringService";
-import { SocketIOThresholdNotificationAdapter } from "@interfaces/SocketIOThresholdNotificationAdapter";
 import { ConsumptionEvaluationService } from "@application/services/ConsumptionEvaluationService";
-import { ConsumptionEventListener } from "@interfaces/ConsumptionEventListener";
 import { HttpAlertServiceAdapter } from "@interfaces/HttpAlertServiceAdapter";
 import type { ThresholdBreachNotificationPort } from "@domain/port/ThresholdBreachNotificationPort";
 import { UuidThresholdIdGeneratorAdapter } from "@interfaces/UuidThresholdIdGeneratorAdapter";
@@ -17,28 +15,19 @@ import { GetThresholdByIdUseCase } from "@application/usecases/GetThresholdByIdU
 import { UpdateThresholdUseCase } from "@application/usecases/UpdateThresholdUseCase";
 import { DeleteThresholdUseCase } from "@application/usecases/DeleteThresholdUseCase";
 import { EvaluateForecastUseCase } from "@application/usecases/EvaluateForecastUseCase";
+import { ConsumptionSubscriber } from "@interfaces/socket/ConsumptionSubscriber";
+import { ThresholdSocketPublisher } from "@interfaces/socket/ThresholdSocketPublisher";
 
 export interface WebApiConfig {
-  /** Base URL of the alert service used to emit breach notifications. */
   alertServiceUrl: string;
-  /** Base URL of the monitoring service used for socket connections. */
   monitoringServiceUrl: string;
-  /** Polling interval (ms) for publishing threshold updates. */
   monitoringIntervalMs: number;
-  /** Base URL of the user service used for authentication checks. */
   userServiceUrl: string;
 }
 
-/**
- * Build the Web API adapters, application services, and router.
- *
- * @param config Runtime configuration for external service URLs and intervals.
- * @returns The router and background services to run alongside the HTTP server.
- */
 export function createWebApiDependencies(config: WebApiConfig) {
   const repository = new MongoThresholdRepository();
   const idGenerator = new UuidThresholdIdGeneratorAdapter();
-
   const alertService = new HttpAlertServiceAdapter(config.alertServiceUrl);
 
   const breachNotificationPort: ThresholdBreachNotificationPort = {
@@ -65,6 +54,7 @@ export function createWebApiDependencies(config: WebApiConfig) {
   const evaluateForecastUseCase = new EvaluateForecastUseCase(
     evaluationService,
   );
+  const resetUseCase = new ResetThresholdUseCase(repository);
 
   const thresholdController = new ThresholdController(
     createThresholdUseCase,
@@ -78,23 +68,19 @@ export function createWebApiDependencies(config: WebApiConfig) {
   const authMiddleware = new AuthMiddleware(config.userServiceUrl);
   const apiRouter = router(thresholdController, authMiddleware);
 
-  const resetUseCase = new ResetThresholdUseCase(repository);
   const thresholdResetScheduler = new ThresholdResetScheduler(resetUseCase);
-
-  const socketAdapter = new SocketIOThresholdNotificationAdapter(
+  const socketPublisher = new ThresholdSocketPublisher(
     config.monitoringServiceUrl,
   );
+
   const thresholdMonitoringService = new ThresholdMonitoringService(
     repository,
-    socketAdapter,
+    socketPublisher,
     config.monitoringIntervalMs,
   );
 
   const createConsumptionEventListener = () =>
-    new ConsumptionEventListener(
-      config.monitoringServiceUrl,
-      evaluationService,
-    );
+    new ConsumptionSubscriber(config.monitoringServiceUrl, evaluationService);
 
   return {
     apiRouter,

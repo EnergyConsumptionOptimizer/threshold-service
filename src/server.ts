@@ -13,52 +13,40 @@ const webApi = createWebApiDependencies({
 const app = createApp(webApi.apiRouter);
 
 async function connectDatabase() {
+  console.log(`[System] Connecting to Mongo: ${config.db.uri}`);
   await mongoose.connect(config.db.uri);
-  console.log("Database connected");
+  console.log("[System] Database connected successfully");
 }
 
-async function startMonitoring() {
-  try {
-    await webApi.thresholdMonitoringService.start();
-    console.log("Threshold monitoring started");
-  } catch (err) {
-    console.warn(
-      "Threshold monitoring unavailable:",
-      err instanceof Error ? err.message : String(err),
-    );
-  }
-}
+async function startServices() {
+  app.listen(config.server.port, () => {
+    console.log(`[System] HTTP Server listening on port ${config.server.port}`);
+  });
 
-async function startConsumptionListener() {
-  try {
-    const listener = webApi.createConsumptionEventListener();
-    await listener.connect();
-    console.log("Consumption listener started");
-    return listener;
-  } catch (err) {
-    console.warn(
-      "Consumption listener unavailable:",
-      err instanceof Error ? err.message : String(err),
+  webApi.thresholdResetScheduler.start();
+
+  webApi.thresholdMonitoringService
+    .start()
+    .then(() => console.log("[System] Threshold Publisher initialized"))
+    .catch((err) =>
+      console.error("[System] Failed to initialize Publisher:", err.message),
     );
-    return null;
-  }
+
+  const subscriber = webApi.createConsumptionEventListener();
+  subscriber
+    .connect()
+    .then(() => console.log("[System] Consumption Subscriber initialized"))
+    .catch((err) =>
+      console.error("[System] Failed to initialize Subscriber:", err.message),
+    );
 }
 
 async function start() {
   try {
     await connectDatabase();
-
-    app.listen(config.server.port, () => {
-      console.log(`Server listening on port ${config.server.port}`);
-    });
-
-    webApi.thresholdResetScheduler.start();
-    console.log("Reset scheduler started");
-
-    await startMonitoring();
-    await startConsumptionListener();
+    await startServices();
   } catch (error) {
-    console.error("Failed to start:", error);
+    console.error("[System] Fatal startup error:", error);
     process.exit(1);
   }
 }

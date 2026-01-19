@@ -42,7 +42,7 @@ describe("ConsumptionEvaluationService", () => {
     service = new ConsumptionEvaluationService(mockRepository);
   });
 
-  describe("evaluateConsumption", () => {
+  describe("evaluate", () => {
     it("should evaluate ACTUAL consumption without periodType", async () => {
       const consumption: ConsumptionParams = {
         utilityType: UtilityType.ELECTRICITY,
@@ -53,7 +53,7 @@ describe("ConsumptionEvaluationService", () => {
       const threshold = createThreshold("1", "T1", 100, ThresholdState.ENABLED);
       vi.mocked(mockRepository.findByFilters).mockResolvedValue([threshold]);
 
-      const result = await service.evaluateConsumption(consumption);
+      const result = await service.evaluate(consumption);
 
       expect(mockRepository.findByFilters).toHaveBeenCalledWith({
         utilityType: UtilityType.ELECTRICITY,
@@ -74,7 +74,7 @@ describe("ConsumptionEvaluationService", () => {
       const threshold = createThreshold("2", "T2", 150, ThresholdState.ENABLED);
       vi.mocked(mockRepository.findByFilters).mockResolvedValue([threshold]);
 
-      const result = await service.evaluateConsumption(consumption);
+      const result = await service.evaluate(consumption);
 
       expect(mockRepository.findByFilters).toHaveBeenCalledWith({
         utilityType: UtilityType.WATER,
@@ -96,7 +96,7 @@ describe("ConsumptionEvaluationService", () => {
       const threshold = createThreshold("3", "T3", 150, ThresholdState.ENABLED);
       vi.mocked(mockRepository.findByFilters).mockResolvedValue([threshold]);
 
-      const result = await service.evaluateConsumption(consumption);
+      const result = await service.evaluate(consumption);
 
       expect(result).toEqual([]);
     });
