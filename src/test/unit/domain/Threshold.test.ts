@@ -206,21 +206,6 @@ describe("Threshold", () => {
       expect(result.thresholdState).toBe(ThresholdState.DISABLED);
     });
 
-    it("should set state to BREACHED when value is exceeded", () => {
-      const threshold = Threshold.create(
-        validId,
-        validName,
-        validUtilityType,
-        validValue,
-        ThresholdType.ACTUAL,
-        ThresholdState.ENABLED,
-      );
-
-      const result = threshold.check(200);
-
-      expect(result.thresholdState).toBe(ThresholdState.BREACHED);
-    });
-
     it("should remain ENABLED if not breached", () => {
       const threshold = Threshold.create(
         validId,

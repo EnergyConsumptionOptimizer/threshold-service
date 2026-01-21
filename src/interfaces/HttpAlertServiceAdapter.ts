@@ -1,3 +1,4 @@
+import axios from "axios";
 import type { ThresholdBreachAlertPort } from "@domain/port/ThresholdBreachAlertPort";
 import type { Threshold } from "@domain/Threshold";
 import { toThresholdEventDTO } from "@presentation/mappers/thresholdEventDTO";
@@ -18,36 +19,32 @@ export class HttpAlertServiceAdapter implements ThresholdBreachAlertPort {
    * @param currentValue Consumption value that triggered the breach.
    */
   async notifyBreach(threshold: Threshold, currentValue: number) {
+    const dto = toThresholdEventDTO(threshold);
+    const { value, ...rest } = dto;
+
     const payload = {
-      ...toThresholdEventDTO(threshold),
+      ...rest,
+      limitValue: value,
       detectedValue: currentValue,
     };
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
-
-      const response = await fetch(
-        `${this.alertServiceUrl}/api/internal/alerts/`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          signal: controller.signal,
-        },
-      );
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`Alert service status ${response.status}`);
-      }
+      await axios.post(`${this.alertServiceUrl}/api/internal/alerts`, payload, {
+        timeout: this.timeoutMs,
+      });
     } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        console.warn(`Alert timeout for threshold ${threshold.id.value}`);
+      if (axios.isAxiosError(error)) {
+        if (error.code === "ECONNABORTED") {
+          console.warn(`Alert timeout for threshold ${threshold.id.value}`);
+        } else {
+          console.error(
+            `Alert service error [${error.response?.status}]:`,
+            error.message,
+          );
+        }
       } else {
         console.error(
-          `Alert error for threshold ${threshold.id.value}:`,
+          `Unexpected error notifying breach for ${threshold.id.value}:`,
           error,
         );
       }

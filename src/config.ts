@@ -25,7 +25,7 @@ const alertServiceUri =
   process.env.ALERT_SERVICE_URI ??
   `http://${
     process.env.ALERT_SERVICE_HOST ?? "alert-service"
-  }:${envInt("ALERT_SERVICE_PORT", 3004)}`;
+  }:${envInt("ALERT_SERVICE_PORT", 3000)}`;
 
 const monitoringServiceUri =
   process.env.MONITORING_SERVICE_URI ??

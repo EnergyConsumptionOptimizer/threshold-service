@@ -69,12 +69,32 @@ export class ConsumptionEvaluationService {
 
   async evaluate(params: ConsumptionParams): Promise<Threshold[]> {
     const activeThresholds = await this.fetchActiveThresholds(params);
-    const breaches = activeThresholds
-      .map((t) => t.check(params.value))
-      .filter((t) => t.thresholdState === ThresholdState.BREACHED);
+    const breaches: Threshold[] = [];
+    const thresholdsToPersist: Threshold[] = [];
+
+    for (const threshold of activeThresholds) {
+      const checkedThreshold = threshold.check(params.value);
+
+      // 1. HISTORICAL / FORECAST: Logic handled by Threshold.check() -> transitions to BREACHED
+      const isStateChangedBreach =
+        checkedThreshold.thresholdState === ThresholdState.BREACHED;
+
+      // 2. ACTUAL: State stays ENABLED, but we detect breach via value check
+      const isActualBreach =
+        threshold.thresholdType === ThresholdType.ACTUAL &&
+        threshold.value.isBreachedBy(params.value);
+
+      if (isStateChangedBreach) {
+        breaches.push(checkedThreshold);
+        thresholdsToPersist.push(checkedThreshold);
+      } else if (isActualBreach) {
+        breaches.push(checkedThreshold);
+        // Do NOT persist ACTUAL thresholds (state must never change)
+      }
+    }
 
     if (breaches.length > 0) {
-      await this.handleBreaches(breaches, params);
+      await this.handleBreaches(breaches, thresholdsToPersist, params);
     }
 
     return breaches;
@@ -105,9 +125,13 @@ export class ConsumptionEvaluationService {
 
   private async handleBreaches(
     breaches: Threshold[],
+    toPersist: Threshold[],
     params: ConsumptionParams,
   ): Promise<void> {
-    await Promise.all(breaches.map((t) => this.repository.update(t.id, t)));
+    if (toPersist.length > 0) {
+      await Promise.all(toPersist.map((t) => this.repository.update(t.id, t)));
+    }
+
     if (this.notificationPort) {
       await this.notificationPort.notifyThresholdsBreach(
         this.mapToInfo(params),

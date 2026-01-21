@@ -22,14 +22,17 @@ describe("ConsumptionEvaluationService", () => {
     name: string,
     value: number,
     state: ThresholdState,
+    type: ThresholdType = ThresholdType.ACTUAL,
+    period?: PeriodType,
   ): Threshold => {
     return Threshold.create(
       ThresholdId.of(id),
       ThresholdName.of(name),
       UtilityType.ELECTRICITY,
       ThresholdValue.of(value),
-      ThresholdType.ACTUAL,
+      type,
       state,
+      period,
     );
   };
 
@@ -43,14 +46,20 @@ describe("ConsumptionEvaluationService", () => {
   });
 
   describe("evaluate", () => {
-    it("should evaluate ACTUAL consumption without periodType", async () => {
+    it("should evaluate ACTUAL consumption, detect breach, but NOT update state", async () => {
       const consumption: ConsumptionParams = {
         utilityType: UtilityType.ELECTRICITY,
         thresholdType: ThresholdType.ACTUAL,
         value: 150,
       };
 
-      const threshold = createThreshold("1", "T1", 100, ThresholdState.ENABLED);
+      const threshold = createThreshold(
+        "1",
+        "T1",
+        100,
+        ThresholdState.ENABLED,
+        ThresholdType.ACTUAL,
+      );
       vi.mocked(mockRepository.findByFilters).mockResolvedValue([threshold]);
 
       const result = await service.evaluate(consumption);
@@ -60,10 +69,13 @@ describe("ConsumptionEvaluationService", () => {
         thresholdType: ThresholdType.ACTUAL,
       });
       expect(result).toHaveLength(1);
-      expect(result[0].thresholdState).toBe(ThresholdState.BREACHED);
+      // ACTUAL thresholds remain ENABLED even when breached
+      expect(result[0].thresholdState).toBe(ThresholdState.ENABLED);
+      // Repository update should NOT be called for ACTUAL
+      expect(mockRepository.update).not.toHaveBeenCalled();
     });
 
-    it("should evaluate HISTORICAL consumption with periodType", async () => {
+    it("should evaluate HISTORICAL consumption, detect breach, AND update state", async () => {
       const consumption: ConsumptionParams = {
         utilityType: UtilityType.WATER,
         thresholdType: ThresholdType.HISTORICAL,
@@ -71,7 +83,14 @@ describe("ConsumptionEvaluationService", () => {
         value: 200,
       };
 
-      const threshold = createThreshold("2", "T2", 150, ThresholdState.ENABLED);
+      const threshold = createThreshold(
+        "2",
+        "T2",
+        150,
+        ThresholdState.ENABLED,
+        ThresholdType.HISTORICAL,
+        PeriodType.ONE_DAY,
+      );
       vi.mocked(mockRepository.findByFilters).mockResolvedValue([threshold]);
 
       const result = await service.evaluate(consumption);
@@ -82,7 +101,10 @@ describe("ConsumptionEvaluationService", () => {
         thresholdType: ThresholdType.HISTORICAL,
       });
       expect(result).toHaveLength(1);
+      // HISTORICAL thresholds transition to BREACHED
       expect(result[0].thresholdState).toBe(ThresholdState.BREACHED);
+      // Repository update MUST be called for HISTORICAL
+      expect(mockRepository.update).toHaveBeenCalled();
     });
 
     it("should return an empty array if no thresholds are breached", async () => {
@@ -93,7 +115,14 @@ describe("ConsumptionEvaluationService", () => {
         value: 50,
       };
 
-      const threshold = createThreshold("3", "T3", 150, ThresholdState.ENABLED);
+      const threshold = createThreshold(
+        "3",
+        "T3",
+        150,
+        ThresholdState.ENABLED,
+        ThresholdType.FORECAST,
+        PeriodType.ONE_MONTH,
+      );
       vi.mocked(mockRepository.findByFilters).mockResolvedValue([threshold]);
 
       const result = await service.evaluate(consumption);
@@ -123,12 +152,15 @@ describe("ConsumptionEvaluationService", () => {
         "T1",
         100,
         ThresholdState.ENABLED,
+        ThresholdType.ACTUAL,
       );
       const threshold2 = createThreshold(
         "2",
         "T2",
         150,
         ThresholdState.ENABLED,
+        ThresholdType.HISTORICAL,
+        PeriodType.ONE_DAY,
       );
 
       vi.mocked(mockRepository.findByFilters)

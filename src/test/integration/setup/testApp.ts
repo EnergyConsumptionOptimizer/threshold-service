@@ -4,7 +4,7 @@ import { createApp } from "../../../app";
 
 export const createTestApp = (): Express => {
   const webApi = createWebApiDependencies({
-    alertServiceUrl: "http://alert-service:3004",
+    alertServiceUrl: "http://alert-service:3000",
     monitoringServiceUrl: "http://monitoring-service:3005",
     monitoringIntervalMs: 10000,
     userServiceUrl: "http://user-service:3000",

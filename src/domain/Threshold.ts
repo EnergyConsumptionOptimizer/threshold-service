@@ -76,8 +76,14 @@ export class Threshold {
 
   /**
    * Evaluate an input and mark the threshold as breached when enabled and exceeded.
+   *
+   * Rules:
+   * - If DISABLED, do nothing.
+   * - If HISTORICAL/FORECAST and value > limit, transition to BREACHED.
+   * - If ACTUAL and value > limit, do NOT transition (remain ENABLED).
+   *
    * @param input - Value to check.
-   * @returns The updated threshold.
+   * @returns The updated threshold (or this if no state change occurred).
    */
   public check(input: number): Threshold {
     if (this.thresholdState === ThresholdState.DISABLED) {
@@ -85,9 +91,11 @@ export class Threshold {
     }
 
     const breached = this.value.isBreachedBy(input);
-    if (breached) {
+
+    if (breached && this.thresholdType !== ThresholdType.ACTUAL) {
       return this.setState(ThresholdState.BREACHED);
     }
+
     return this;
   }
 
