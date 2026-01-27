@@ -21,10 +21,6 @@ The Threshold Service handles threshold management (CRUD) and the core logic for
 [![Renovate](https://img.shields.io/badge/Renovate-1A1F6C?style=for-the-badge&logo=renovate&logoColor=white)](https://renovatebot.com/)
 
 ## REST API Endpoints
-
-### Healthcheck
-- `GET /health`
-
 ### Thresholds
 - `POST /api/thresholds`
 - `GET /api/thresholds`
@@ -32,8 +28,11 @@ The Threshold Service handles threshold management (CRUD) and the core logic for
 - `PUT /api/thresholds/:id`
 - `DELETE /api/thresholds/:id`
 
-### Threshold Evaluations
+### Internal - Threshold Evaluations
 - `POST /api/internal/thresholds/evaluations/forecast`
+
+## Documentation
+Documentation of the typescript code base can be found at the [typedoc](https://energyconsumptionoptimizer.github.io/threshold-service/).
 
 ## Authors
 - Rares Vasiliu ([rares-vsl](https://github.com/rares-vsl))
