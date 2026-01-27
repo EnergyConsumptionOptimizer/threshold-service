@@ -24,9 +24,9 @@ The Threshold Service handles threshold management (CRUD) and the core logic for
 ### Thresholds
 - `POST /api/thresholds`
 - `GET /api/thresholds`
-- `GET /api/thresholds/:id`
-- `PUT /api/thresholds/:id`
-- `DELETE /api/thresholds/:id`
+- `GET /api/thresholds/{id}`
+- `PUT /api/thresholds/{id}`
+- `DELETE /api/thresholds/{id}`
 
 ### Internal - Threshold Evaluations
 - `POST /api/internal/thresholds/evaluations/forecast`
