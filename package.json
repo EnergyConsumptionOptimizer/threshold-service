@@ -33,7 +33,7 @@
     "node-cron": "^4.2.1",
     "reflect-metadata": "^0.2.2",
     "socket.io-client": "^4.8.1",
-    "uuid": "^13.0.0",
+    "uuid": "^14.0.0",
     "yamljs": "^0.3.0",
     "zod": "^4.1.12"
   },
