@@ -81,7 +81,7 @@ export class Threshold extends AggregateRoot {
 		const error = Threshold.#validateConfiguration(thresholdType, periodType);
 		if (error) return error;
 
-		const threshold = new Threshold(
+		return new Threshold(
 			id,
 			name,
 			utilityType,
@@ -90,7 +90,6 @@ export class Threshold extends AggregateRoot {
 			ThresholdStates.ENABLED,
 			periodType,
 		);
-		return threshold;
 	}
 
 	static restore(
