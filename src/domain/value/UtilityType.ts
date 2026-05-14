@@ -1,6 +1,7 @@
-/** Defines which utility a threshold applies to. */
-export enum UtilityType {
-  ELECTRICITY = "ELECTRICITY",
-  GAS = "GAS",
-  WATER = "WATER",
-}
+export const UtilityTypes = {
+	ELECTRICITY: "ELECTRICITY",
+	GAS: "GAS",
+	WATER: "WATER",
+} as const;
+
+export type UtilityType = (typeof UtilityTypes)[keyof typeof UtilityTypes];

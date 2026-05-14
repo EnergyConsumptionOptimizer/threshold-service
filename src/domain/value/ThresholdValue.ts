@@ -1,36 +1,23 @@
-import { InvalidThresholdValueError } from "@domain/errors";
+import { DomainErrorCode, InvalidThresholdValueError } from "@domain/errors";
 
-/** Wraps a numeric limit and enforces that it is strictly positive. */
 export class ThresholdValue {
-  private constructor(private readonly limit: number) {}
+	private constructor(readonly value: number) {}
 
-  /**
-   * Create a validated threshold limit.
-   * @returns The validated threshold value.
-   */
-  static of(limit: number): ThresholdValue {
-    if (limit <= 0) {
-      throw new InvalidThresholdValueError(
-        limit,
-        "Threshold value must be greater than zero",
-      );
-    }
-    return new ThresholdValue(limit);
-  }
+	static of(value: number): ThresholdValue | InvalidThresholdValueError {
+		if (value <= 0) {
+			return new InvalidThresholdValueError(
+				DomainErrorCode.THRESHOLD_VALUE_NOT_POSITIVE,
+				"Threshold value must be greater than zero",
+			);
+		}
+		return new ThresholdValue(value);
+	}
 
-  equals(other: ThresholdValue): boolean {
-    return this.limit === other.limit;
-  }
+	isBreachedBy(measured: number): boolean {
+		return measured > this.value;
+	}
 
-  isBreachedBy(measured: number): boolean {
-    return measured > this.limit;
-  }
-
-  toString(): string {
-    return this.limit.toString();
-  }
-
-  valueOf(): number {
-    return this.limit;
-  }
+	equals(other: ThresholdValue): boolean {
+		return this.value === other.value;
+	}
 }

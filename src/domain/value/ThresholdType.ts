@@ -1,6 +1,8 @@
-/** Classifies a threshold by how its target value is computed. */
-export enum ThresholdType {
-  ACTUAL = "ACTUAL",
-  HISTORICAL = "HISTORICAL",
-  FORECAST = "FORECAST",
-}
+export const ThresholdTypes = {
+	ACTUAL: "ACTUAL",
+	HISTORICAL: "HISTORICAL",
+	FORECAST: "FORECAST",
+} as const;
+
+export type ThresholdType =
+	(typeof ThresholdTypes)[keyof typeof ThresholdTypes];

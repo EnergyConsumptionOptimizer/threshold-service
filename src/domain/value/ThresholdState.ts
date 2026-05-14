@@ -1,6 +1,8 @@
-/** Represents whether a threshold is active and whether it is currently breached. */
-export enum ThresholdState {
-  ENABLED = "ENABLED",
-  DISABLED = "DISABLED",
-  BREACHED = "BREACHED",
-}
+export const ThresholdStates = {
+	ENABLED: "ENABLED",
+	DISABLED: "DISABLED",
+	BREACHED: "BREACHED",
+} as const;
+
+export type ThresholdState =
+	(typeof ThresholdStates)[keyof typeof ThresholdStates];

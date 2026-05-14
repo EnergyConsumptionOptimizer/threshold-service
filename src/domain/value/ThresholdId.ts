@@ -1,35 +1,20 @@
-import { InvalidThresholdIdError } from "@domain/errors";
+import { DomainErrorCode, InvalidThresholdIdError } from "@domain/errors";
 
-/** Wraps a threshold identifier and enforces basic normalization/validation. */
 export class ThresholdId {
-  private constructor(public readonly value: string) {}
+	private constructor(readonly value: string) {}
 
-  /**
-   * Create a normalized threshold ID.
-   * @param value - Trimmed before validation.
-   * @returns The normalized ID.
-   */
-  static of(value: string): ThresholdId {
-    const normalized = value?.trim();
-    if (!normalized) {
-      throw new InvalidThresholdIdError(
-        value,
-        "ThresholdId cannot be empty or blank",
-      );
-    }
-    return new ThresholdId(normalized);
-  }
+	static of(id: string): ThresholdId | InvalidThresholdIdError {
+		const trimmed = id.trim();
+		if (!trimmed) {
+			return new InvalidThresholdIdError(
+				DomainErrorCode.THRESHOLD_ID_EMPTY,
+				"Threshold ID must not be empty",
+			);
+		}
+		return new ThresholdId(trimmed);
+	}
 
-  valueOf(): string {
-    return this.value;
-  }
-
-  toString(): string {
-    return this.value;
-  }
-
-  equals(other: ThresholdId): boolean {
-    if (!other) return false;
-    return this.value === other.value;
-  }
+	equals(other: ThresholdId): boolean {
+		return this.value === other.value;
+	}
 }
