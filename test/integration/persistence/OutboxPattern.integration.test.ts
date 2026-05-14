@@ -19,7 +19,6 @@ import {
 	UTILITY,
 	validId,
 	validName,
-	validValue,
 } from "./fixtures";
 
 describe("Outbox Pattern (integration)", () => {

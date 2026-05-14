@@ -15,7 +15,6 @@ import {
 	UTILITY,
 	validId,
 	validName,
-	validValue,
 } from "@test/integration/persistence/fixtures";
 import { clearDatabase, startMongo, stopMongo } from "@test/mongoSetup";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
