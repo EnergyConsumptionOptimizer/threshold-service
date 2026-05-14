@@ -47,6 +47,7 @@ bin/
 # Testing & Coverage
 coverage/
 .nyc_output/
+test/
 
 # Documentation & Misc
 README.md
