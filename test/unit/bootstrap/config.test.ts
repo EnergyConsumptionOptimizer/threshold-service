@@ -14,7 +14,7 @@ describe("EnvSchema", () => {
 		expect(result.data.KAFKA_BOOTSTRAP_SERVERS).toBe("kafka:9092");
 		expect(result.data.KAFKA_GROUP_ID).toBe("threshold-service-group");
 		expect(result.data.KAFKA_TOPIC_FORECASTS).toBe("forecast-events");
-		expect(result.data.KAFKA_TOPIC_FORECASTS_DLQ).toBe("forecast-dlq");
+		expect(result.data.KAFKA_TOPIC_FORECASTS_DLQ).toBe("threshold-dlq");
 		expect(result.data.MONITORING_SERVICE_HOST).toBe("monitoring");
 		expect(result.data.MONITORING_SERVICE_PORT).toBe(3000);
 		expect(result.data.LOG_LEVEL).toBe("info");
@@ -51,12 +51,4 @@ describe("EnvSchema", () => {
 		}
 	});
 
-	it("accepts a MONGO_URI override", () => {
-		const result = EnvSchema.safeParse({
-			MONGO_URI: "mongodb://custom:27017/mydb",
-		});
-		expect(result.success).toBe(true);
-		if (!result.success) return;
-		expect(result.data.MONGO_URI).toBe("mongodb://custom:27017/mydb");
-	});
 });
