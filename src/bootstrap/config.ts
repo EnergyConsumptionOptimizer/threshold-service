@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const EnvSchema = z.object({
 	PORT: z.coerce.number().default(3000),
-	MONGO_URI: z.string().optional(),
 	MONGODB_HOST: z.string().default("localhost"),
 	MONGODB_PORT: z.coerce.number().default(27017),
 	MONGO_DB: z.string().default("threshold"),
@@ -10,7 +9,7 @@ export const EnvSchema = z.object({
 	KAFKA_BOOTSTRAP_SERVERS: z.string().default("kafka:9092"),
 	KAFKA_GROUP_ID: z.string().default("threshold-service-group"),
 	KAFKA_TOPIC_FORECASTS: z.string().default("forecast-events"),
-	KAFKA_TOPIC_FORECASTS_DLQ: z.string().default("forecast-dlq"),
+	KAFKA_TOPIC_FORECASTS_DLQ: z.string().default("threshold-dlq"),
 	MONITORING_SERVICE_HOST: z.string().default("monitoring"),
 	MONITORING_SERVICE_PORT: z.coerce.number().default(3000),
 	LOG_LEVEL: z
@@ -34,9 +33,7 @@ const env = result.data;
 export const config = {
 	port: env.PORT,
 	mongo: {
-		uri:
-			env.MONGO_URI ??
-			`mongodb://${env.MONGODB_HOST}:${env.MONGODB_PORT}/${env.MONGO_DB}`,
+		uri: `mongodb://${env.MONGODB_HOST}:${env.MONGODB_PORT}/${env.MONGO_DB}`,
 	},
 	kafka: {
 		clientId: env.KAFKA_CLIENT_ID,
