@@ -9,7 +9,7 @@ import type { BusinessMetricsPort } from "@application/ports/out/BusinessMetrics
 import type { EventPublisher } from "@application/ports/out/EventPublisher";
 import type { UnitOfWork } from "@application/ports/out/UnitOfWork";
 import type { ThresholdRepository } from "@domain/ports/ThresholdRepository";
-import type { PeriodType } from "@domain/value/PeriodType";
+import { PeriodType } from "@domain/value/PeriodType";
 import {
 	type ThresholdType,
 	ThresholdTypes,
@@ -56,8 +56,32 @@ export class EvaluationServiceImpl implements EvaluationService {
 	}
 
 	async checkForecastReadings(params: CheckForecastParams): Promise<void> {
+		const today = new Date();
+		const weeksDays = today.getDay() === 0 ? 1 : 8 - today.getDay();
+		const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+		const monthsDays = monthEnd.getDate() - today.getDate() + 1;
+
+		const aggregations = [
+			{
+				periodType: PeriodType.ONE_DAY,
+				value: params.dataPoints[0].value,
+			},
+			{
+				periodType: PeriodType.ONE_WEEK,
+				value: params.dataPoints
+					.slice(0, weeksDays)
+					.reduce((s, p) => s + p.value, 0),
+			},
+			{
+				periodType: PeriodType.ONE_MONTH,
+				value: params.dataPoints
+					.slice(0, monthsDays)
+					.reduce((s, p) => s + p.value, 0),
+			},
+		];
+
 		await Promise.all(
-			params.aggregations.map((a) =>
+			aggregations.map((a) =>
 				this.#detectBreach({
 					utilityType: params.utilityType,
 					thresholdType: ThresholdTypes.FORECAST,

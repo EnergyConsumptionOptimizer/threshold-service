@@ -41,17 +41,14 @@ export class InternalController {
 	}
 
 	async evaluateForecast(req: Request, res: Response): Promise<void> {
-		const { utilityType, aggregations } = req.body;
+		const { utilityType, dataPoints } = req.body;
 
 		const params: CheckForecastParams = {
 			utilityType,
-			aggregations: aggregations.map(
-				(a: { periodType: string; value: number }) => {
-					const parsed = PeriodType.of(a.periodType);
-					if (parsed instanceof Error) throw parsed;
-					return { periodType: parsed, value: a.value };
-				},
-			),
+			dataPoints: dataPoints.map((p: { date: string; value: number }) => ({
+				date: new Date(p.date),
+				value: p.value,
+			})),
 		};
 
 		await this.#evaluationService.checkForecastReadings(params);

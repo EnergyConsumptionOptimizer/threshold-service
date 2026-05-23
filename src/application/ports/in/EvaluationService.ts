@@ -1,4 +1,3 @@
-import type { PeriodType } from "@domain/value/PeriodType";
 import type { ThresholdType } from "@domain/value/ThresholdType";
 import type { UtilityType } from "@domain/value/UtilityType";
 
@@ -13,8 +12,8 @@ export interface EvaluationContext {
 	periodType?: PeriodType;
 }
 
-export interface ForecastAggregation {
-	periodType: PeriodType;
+export interface ForecastDataPoint {
+	date: Date;
 	value: number;
 }
 
@@ -25,7 +24,7 @@ export interface CheckRealtimeParams {
 
 export interface CheckForecastParams {
 	readonly utilityType: UtilityType;
-	readonly aggregations: ForecastAggregation[];
+	readonly dataPoints: ForecastDataPoint[];
 }
 
 export interface EvaluationService {

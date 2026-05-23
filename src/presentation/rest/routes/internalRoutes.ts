@@ -1,5 +1,5 @@
 import type { InternalController } from "@presentation/rest/InternalController";
-import { forwardAuth, requireRole } from "@presentation/rest/middleware/auth";
+import { requireRole } from "@presentation/rest/middleware/auth";
 import { validate } from "@presentation/rest/middleware/validate";
 import {
 	EvaluateForecastSchema,
@@ -12,8 +12,6 @@ const ADMIN = "ADMIN" as const;
 
 export function internalRoutes(internalController: InternalController): Router {
 	const router = Router();
-
-	router.use(forwardAuth);
 
 	router.post(
 		"/evaluations/realtime",

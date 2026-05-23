@@ -171,7 +171,7 @@ describe("Evaluations Component", () => {
 	});
 
 	describe("Feature: System evaluates forecast readings", () => {
-		it("Given FORECAST threshold and exceeding aggregation, When forecast evaluated, Then threshold becomes BREACHED", async () => {
+		it("Given FORECAST threshold and exceeding data point, When forecast evaluated, Then threshold becomes BREACHED", async () => {
 			const thresholdId = await createThreshold({
 				name: "Forecast Limit",
 				utilityType: "ELECTRICITY",
@@ -185,7 +185,7 @@ describe("Evaluations Component", () => {
 				.set(ADMIN)
 				.send({
 					utilityType: "ELECTRICITY",
-					aggregations: [{ periodType: "ONE_DAY", value: 250 }],
+					dataPoints: [{ date: "2024-01-01", value: 250 }],
 				});
 
 			const res = await request(ctx.app)
@@ -196,7 +196,7 @@ describe("Evaluations Component", () => {
 			expect(res.body.thresholdState).toBe("BREACHED");
 		});
 
-		it("Given FORECAST threshold and aggregation below limit, When forecast evaluated, Then threshold stays ENABLED", async () => {
+		it("Given FORECAST threshold and data point below limit, When forecast evaluated, Then threshold stays ENABLED", async () => {
 			const thresholdId = await createThreshold({
 				name: "Safe Forecast",
 				utilityType: "GAS",
@@ -210,7 +210,7 @@ describe("Evaluations Component", () => {
 				.set(ADMIN)
 				.send({
 					utilityType: "GAS",
-					aggregations: [{ periodType: "ONE_WEEK", value: 150 }],
+					dataPoints: [{ date: "2024-01-01", value: 150 }],
 				});
 
 			const res = await request(ctx.app)
@@ -220,7 +220,7 @@ describe("Evaluations Component", () => {
 			expect(res.body.thresholdState).toBe("ENABLED");
 		});
 
-		it("Given FORECAST threshold with different period type, When forecast evaluated, Then threshold not matched stays ENABLED", async () => {
+		it("Given FORECAST threshold and data points below limit, When forecast evaluated, Then threshold stays ENABLED", async () => {
 			const thresholdId = await createThreshold({
 				name: "Monthly Forecast",
 				utilityType: "WATER",
@@ -234,7 +234,7 @@ describe("Evaluations Component", () => {
 				.set(ADMIN)
 				.send({
 					utilityType: "WATER",
-					aggregations: [{ periodType: "ONE_DAY", value: 500 }],
+					dataPoints: [{ date: "2024-01-01", value: 200 }],
 				});
 
 			const res = await request(ctx.app)

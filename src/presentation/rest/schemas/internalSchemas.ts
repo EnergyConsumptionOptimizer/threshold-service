@@ -28,10 +28,10 @@ export const EvaluateRealtimeSchema = z.object({
 export const EvaluateForecastSchema = z.object({
 	body: z.object({
 		utilityType: z.enum(UtilityTypes),
-		aggregations: z
+		dataPoints: z
 			.array(
 				z.object({
-					periodType: periodTypeEnum,
+					date: z.string(),
 					value: z.number(),
 				}),
 			)

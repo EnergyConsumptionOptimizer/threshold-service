@@ -98,9 +98,9 @@ describe("InternalController", () => {
 			const req = mockRequest({
 				body: {
 					utilityType: "ELECTRICITY",
-					aggregations: [
-						{ periodType: "ONE_DAY", value: 250 },
-						{ periodType: "ONE_WEEK", value: 1500 },
+					dataPoints: [
+						{ date: "2024-01-01", value: 250 },
+						{ date: "2024-01-02", value: 150 },
 					],
 				},
 			});
@@ -110,14 +110,14 @@ describe("InternalController", () => {
 
 			expect(evaluationService.checkForecastReadings).toHaveBeenCalledWith({
 				utilityType: "ELECTRICITY",
-				aggregations: [
+				dataPoints: [
 					{
-						periodType: expect.objectContaining({ value: "ONE_DAY" }),
+						date: new Date("2024-01-01"),
 						value: 250,
 					},
 					{
-						periodType: expect.objectContaining({ value: "ONE_WEEK" }),
-						value: 1500,
+						date: new Date("2024-01-02"),
+						value: 150,
 					},
 				],
 			});

@@ -1,5 +1,4 @@
 import type { EvaluationService } from "@application/ports/in/EvaluationService";
-import { PeriodType } from "@domain/value/PeriodType";
 import { type UtilityType, UtilityTypes } from "@domain/value/UtilityType";
 import type { DlqPublisher } from "@infrastructure/messaging/DlqPublisher";
 import type { InboxRepository } from "@infrastructure/persistence/InboxRepository";
@@ -14,9 +13,9 @@ const ForecastMessageSchema = z.object({
 	eventType: z.string().optional(),
 	correlationId: z.string().optional(),
 	utilityType: z.string(),
-	aggregations: z.array(
+	dataPoints: z.array(
 		z.object({
-			periodType: z.string(),
+			date: z.string(),
 			value: z.number(),
 		}),
 	),
@@ -26,18 +25,6 @@ function parseUtilityType(raw: string): UtilityType {
 	const found = Object.values(UtilityTypes).find((v) => v === raw);
 	if (!found) {
 		throw new UnrecoverableError(`Unknown utilityType: ${raw}`);
-	}
-	return found;
-}
-
-function parsePeriodType(raw: string): PeriodType {
-	const found = [
-		PeriodType.ONE_DAY,
-		PeriodType.ONE_WEEK,
-		PeriodType.ONE_MONTH,
-	].find((p) => p.value === raw);
-	if (!found) {
-		throw new UnrecoverableError(`Unknown periodType: ${raw}`);
 	}
 	return found;
 }
@@ -117,15 +104,15 @@ export class ForecastMessageHandler {
 			async (span) => {
 				try {
 					const utilityType = parseUtilityType(message.utilityType);
-					const aggregations = message.aggregations.map((a) => ({
-						periodType: parsePeriodType(a.periodType),
-						value: a.value,
+					const dataPoints = message.dataPoints.map((p) => ({
+						date: new Date(p.date),
+						value: p.value,
 					}));
 
 					await withRetry(() =>
 						this.#evaluationService.checkForecastReadings({
 							utilityType,
-							aggregations,
+							dataPoints,
 						}),
 					);
 				} catch (err) {

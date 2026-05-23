@@ -3,7 +3,6 @@ import type { EventPublisher } from "@application/ports/out/EventPublisher";
 import type { UnitOfWork } from "@application/ports/out/UnitOfWork";
 import { EvaluationServiceImpl } from "@application/services/EvaluationServiceImpl";
 import type { ThresholdRepository } from "@domain/ports/ThresholdRepository";
-import { PeriodType } from "@domain/value/PeriodType";
 import { ThresholdStates } from "@domain/value/ThresholdState";
 import { ThresholdTypes } from "@domain/value/ThresholdType";
 import { UtilityTypes } from "@domain/value/UtilityType";
@@ -153,25 +152,26 @@ describe("EvaluationServiceImpl", () => {
 	});
 
 	describe("checkForecastReadings()", () => {
-		it("should evaluate forecast aggregations against FORECAST thresholds", async () => {
+		it("should evaluate forecast data points against FORECAST thresholds", async () => {
 			const forecastThreshold = aThreshold({
 				id: validId("ft1"),
 				utilityType: UtilityTypes.ELECTRICITY,
 				value: validValue(200),
 				thresholdType: ThresholdTypes.FORECAST,
 				thresholdState: ThresholdStates.ENABLED,
-				periodType: PeriodType.ONE_DAY,
+				periodType: undefined,
 			});
 			repository.findActive
 				.mockResolvedValueOnce([forecastThreshold])
 				.mockResolvedValueOnce([]);
 
+			const dataPoints = Array.from({ length: 30 }, (_, i) => ({
+				date: new Date(2024, 0, 1 + i),
+				value: 250,
+			}));
 			await service.checkForecastReadings({
 				utilityType: UtilityTypes.ELECTRICITY,
-				aggregations: [
-					{ periodType: PeriodType.ONE_DAY, value: 250 },
-					{ periodType: PeriodType.ONE_WEEK, value: 150 },
-				],
+				dataPoints,
 			});
 
 			expect(uow.executeTransactionally).toHaveBeenCalledTimes(1);
@@ -188,13 +188,17 @@ describe("EvaluationServiceImpl", () => {
 				value: validValue(200),
 				thresholdType: ThresholdTypes.FORECAST,
 				thresholdState: ThresholdStates.ENABLED,
-				periodType: PeriodType.ONE_DAY,
+				periodType: undefined,
 			});
 			repository.findActive.mockResolvedValue([forecastThreshold]);
 
+			const dataPoints = Array.from({ length: 30 }, (_, i) => ({
+				date: new Date(2024, 0, 1 + i),
+				value: 0,
+			}));
 			await service.checkForecastReadings({
 				utilityType: UtilityTypes.ELECTRICITY,
-				aggregations: [{ periodType: PeriodType.ONE_DAY, value: 100 }],
+				dataPoints,
 			});
 
 			expect(uow.executeTransactionally).not.toHaveBeenCalled();

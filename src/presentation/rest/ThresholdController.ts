@@ -38,7 +38,15 @@ export class ThresholdController {
 	}
 
 	async update(req: Request, res: Response) {
-		const result = await this.#thresholdService.update(req.params.id, req.body);
+		const updates = { ...req.body };
+		if (updates.periodType) {
+			const periodTypeVO = PeriodType.of(updates.periodType);
+			if (periodTypeVO instanceof Error) throw periodTypeVO;
+			updates.periodType = periodTypeVO;
+		} else if (updates.periodType === "") {
+			updates.periodType = undefined;
+		}
+		const result = await this.#thresholdService.update(req.params.id, updates);
 		if (result instanceof Error) throw result;
 		res.status(StatusCodes.OK).json(result);
 	}

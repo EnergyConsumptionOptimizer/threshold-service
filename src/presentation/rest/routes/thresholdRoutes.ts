@@ -1,4 +1,4 @@
-import { forwardAuth, requireRole } from "@presentation/rest/middleware/auth";
+import { requireRole } from "@presentation/rest/middleware/auth";
 import { validate } from "@presentation/rest/middleware/validate";
 import {
 	CreateThresholdSchema,
@@ -16,8 +16,6 @@ export function thresholdRoutes(
 	thresholdController: ThresholdController,
 ): Router {
 	const router = Router();
-
-	router.use(forwardAuth);
 
 	router
 		.route("/")
