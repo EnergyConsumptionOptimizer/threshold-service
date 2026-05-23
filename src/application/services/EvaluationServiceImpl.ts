@@ -1,9 +1,7 @@
 import type {
 	CheckForecastParams,
 	CheckRealtimeParams,
-	EvaluationContext,
 	EvaluationService,
-	UtilityReadings,
 } from "@application/ports/in/EvaluationService";
 import type { BusinessMetricsPort } from "@application/ports/out/BusinessMetricsPort";
 import type { EventPublisher } from "@application/ports/out/EventPublisher";
@@ -16,19 +14,6 @@ import {
 } from "@domain/value/ThresholdType";
 import { type UtilityType, UtilityTypes } from "@domain/value/UtilityType";
 import type { Logger } from "pino";
-
-interface BreachCheck {
-	utilityType: UtilityType;
-	thresholdType: ThresholdType;
-	periodType?: PeriodType;
-	value: number;
-}
-
-const UTILITY_KEY_MAP: Record<keyof UtilityReadings, UtilityType> = {
-	electricity: UtilityTypes.ELECTRICITY,
-	water: UtilityTypes.WATER,
-	gas: UtilityTypes.GAS,
-};
 
 export class EvaluationServiceImpl implements EvaluationService {
 	readonly #repository: ThresholdRepository;
@@ -52,14 +37,35 @@ export class EvaluationServiceImpl implements EvaluationService {
 	}
 
 	async checkRealtimeReadings(params: CheckRealtimeParams): Promise<void> {
-		await this.#checkReadings(params.readings, params.context);
+		const { readings, context } = params;
+
+		await Promise.all(
+			(
+				[
+					[UtilityTypes.ELECTRICITY, readings.electricity],
+					[UtilityTypes.WATER, readings.water],
+					[UtilityTypes.GAS, readings.gas],
+				] as const
+			).flatMap(([utilityType, data]) =>
+				data
+					? [
+							this.#detectBreach({
+								utilityType,
+								value: data.value,
+								thresholdType: context.thresholdType,
+								periodType: context.periodType,
+							}),
+						]
+					: [],
+			),
+		);
 	}
 
 	async checkForecastReadings(params: CheckForecastParams): Promise<void> {
 		const today = new Date();
-		const weeksDays = today.getDay() === 0 ? 1 : 8 - today.getDay();
+		const daysRemainingInWeek = today.getDay() === 0 ? 1 : 8 - today.getDay();
 		const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-		const monthsDays = monthEnd.getDate() - today.getDate() + 1;
+		const daysRemainingInMonth = monthEnd.getDate() - today.getDate() + 1;
 
 		const aggregations = [
 			{
@@ -69,14 +75,14 @@ export class EvaluationServiceImpl implements EvaluationService {
 			{
 				periodType: PeriodType.ONE_WEEK,
 				value: params.dataPoints
-					.slice(0, weeksDays)
-					.reduce((s, p) => s + p.value, 0),
+					.slice(0, daysRemainingInWeek)
+					.reduce((sum, p) => sum + p.value, 0),
 			},
 			{
 				periodType: PeriodType.ONE_MONTH,
 				value: params.dataPoints
-					.slice(0, monthsDays)
-					.reduce((s, p) => s + p.value, 0),
+					.slice(0, daysRemainingInMonth)
+					.reduce((sum, p) => sum + p.value, 0),
 			},
 		];
 
@@ -84,75 +90,52 @@ export class EvaluationServiceImpl implements EvaluationService {
 			aggregations.map((a) =>
 				this.#detectBreach({
 					utilityType: params.utilityType,
+					value: a.value,
 					thresholdType: ThresholdTypes.FORECAST,
 					periodType: a.periodType,
-					value: a.value,
 				}),
 			),
 		);
 	}
 
-	async #checkReadings(
-		readings: UtilityReadings,
-		context: EvaluationContext,
-	): Promise<void> {
-		const checks: Promise<void>[] = [];
-
-		for (const [key, data] of Object.entries(readings) as [
-			keyof UtilityReadings,
-			{ value: number } | undefined,
-		][]) {
-			if (key in UTILITY_KEY_MAP && data) {
-				checks.push(
-					this.#detectBreach({
-						utilityType: UTILITY_KEY_MAP[key],
-						thresholdType: context.thresholdType,
-						periodType: context.periodType,
-						value: data.value,
-					}),
-				);
-			}
-		}
-
-		await Promise.all(checks);
-	}
-
-	async #detectBreach(params: BreachCheck): Promise<void> {
+	async #detectBreach(params: {
+		utilityType: UtilityType;
+		value: number;
+		thresholdType: ThresholdType;
+		periodType?: PeriodType;
+	}): Promise<void> {
 		const activeThresholds = await this.#repository.findActive(
 			params.utilityType,
 			params.thresholdType,
 			params.periodType,
 		);
 
-		const savePromises: Promise<void>[] = [];
-
 		for (const threshold of activeThresholds) {
 			threshold.check(params.value);
+		}
 
-			if (threshold.isBreached) {
-				this.#logger?.warn(
-					{
-						thresholdId: threshold.id.value,
-						thresholdName: threshold.name.value,
-						utilityType: params.utilityType,
-						detectedValue: params.value,
-						limitValue: threshold.value.value,
-					},
-					"Threshold breached",
-				);
-
-				savePromises.push(
-					this.#uow.executeTransactionally(async () => {
+		await Promise.all(
+			activeThresholds
+				.filter((t) => t.isBreached)
+				.map((threshold) => {
+					this.#logger?.warn(
+						{
+							thresholdId: threshold.id.value,
+							thresholdName: threshold.name.value,
+							utilityType: params.utilityType,
+							detectedValue: params.value,
+							limitValue: threshold.value.value,
+						},
+						"Threshold breached",
+					);
+					return this.#uow.executeTransactionally(async () => {
 						await this.#repository.save(threshold);
 						for (const event of threshold.pullDomainEvents()) {
 							await this.#eventPublisher.publish(event);
 						}
 						this.#metrics.recordThresholdBreach(params.utilityType);
-					}),
-				);
-			}
-		}
-
-		await Promise.all(savePromises);
+					});
+				}),
+		);
 	}
 }

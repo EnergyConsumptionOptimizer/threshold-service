@@ -1,20 +1,21 @@
+import type { PeriodType } from "@domain/value/PeriodType";
 import type { ThresholdType } from "@domain/value/ThresholdType";
 import type { UtilityType } from "@domain/value/UtilityType";
 
 export interface UtilityReadings {
-	electricity?: { value: number };
-	water?: { value: number };
-	gas?: { value: number };
+	readonly electricity?: { value: number };
+	readonly water?: { value: number };
+	readonly gas?: { value: number };
 }
 
 export interface EvaluationContext {
-	thresholdType: ThresholdType;
-	periodType?: PeriodType;
+	readonly thresholdType: ThresholdType;
+	readonly periodType?: PeriodType;
 }
 
 export interface ForecastDataPoint {
-	date: Date;
-	value: number;
+	readonly date: Date;
+	readonly value: number;
 }
 
 export interface CheckRealtimeParams {
